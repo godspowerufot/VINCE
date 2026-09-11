@@ -12,14 +12,15 @@ import { ProofPanel } from "@/components/ProofPanel";
 import { StageStatus } from "@/components/StageStatus";
 import { Verdict } from "@/components/Verdict";
 import { WindowClock } from "@/components/WindowClock";
+import gateAbi from "@/lib/abi/VinceGate.json";
 import { EXAMPLE_TX } from "@/lib/fixtures";
 import { classifyHash } from "@/lib/hash";
-import { ENGINE_ABI, GATE_ABI } from "@/lib/protocol/abi";
+import { ENGINE_ABI } from "@/lib/protocol/abi";
 import { PROTOCOL, protocolDeployed } from "@/lib/protocol/deployments";
 import type { ListedMarket, ObserveEvent, ObserveResult, PolicyReason } from "@/lib/protocol/types";
 import { runObserve } from "@/lib/protocol/runObserve";
 import { useProtocolStatus } from "@/lib/protocol/useProtocolStatus";
-import { connectSepolia } from "@/lib/protocol/wallet";
+import { connectSettlement, sendSettlementTx, walletError } from "@/lib/protocol/wallet";
 import {
   getServerWindow,
   readWindow,
@@ -105,24 +106,35 @@ export function GateClient({
       !result.answer ||
       result.advanced.verifySingle !== true
     ) {
-      setError("Attestation is required before Sepolia policy. Fail closed.");
+      setError("Attestation is required before Creditcoin policy. Fail closed.");
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      const { provider } = await connectSepolia();
-      const signer = await provider.getSigner();
-      const gate = new Contract(PROTOCOL.gate, GATE_ABI, signer);
-      const sent = await gate.submitAttestedFeedUpdate(
-        result.tx,
-        result.chainKey,
-        result.advanced.emitter,
-        BigInt(result.answer),
-        result.updatedAt,
-        result.merkleProof.root,
-        result.continuityProof.lowerEndpointDigest,
-      );
+      const { signer, address } = await connectSettlement();
+      const gate = new Contract(PROTOCOL.gate, gateAbi, signer);
+      const proof = {
+        chainKey: result.chainKey,
+        blockHeight: result.blockHeight,
+        encodedTransaction: result.txBytes.startsWith("0x")
+          ? result.txBytes
+          : `0x${result.txBytes}`,
+        merkleProof: {
+          root: result.merkleProof.root,
+          siblings: result.merkleProof.siblings,
+        },
+        continuityProof: {
+          lowerEndpointDigest: result.continuityProof.lowerEndpointDigest,
+          roots: result.continuityProof.roots,
+        },
+      };
+      const data = gate.interface.encodeFunctionData("submitSourceTransaction", [proof]);
+      const sent = await sendSettlementTx(signer, {
+        from: address,
+        to: PROTOCOL.gate,
+        data,
+      });
       const receipt = await sent.wait();
       const iface = new Interface(ENGINE_ABI);
       let decision: "PASS" | "REJECT" = result.decision;
@@ -159,11 +171,7 @@ export function GateClient({
         });
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not submit Sepolia policy. Fail closed.",
-      );
+      setError(walletError(err));
     } finally {
       setSubmitting(false);
     }
@@ -177,7 +185,7 @@ export function GateClient({
             Verified Market Gate
           </h1>
           <p className="mt-3 text-[15px] text-mute">
-            Ethereum source · Attestcoin proof · Sepolia policy
+            Ethereum source · Attestcoin proof · Creditcoin policy
           </p>
 
           <form
@@ -188,17 +196,24 @@ export function GateClient({
             }}
           >
             <HashField value={tx} onChange={setTx} disabled={busy || submitting} />
-            <ul className="space-y-1 text-[12px] leading-5 text-mute">
+            <ul className="space-y-2 text-[12px] leading-5 text-mute">
+              {protocol.loading && listed.length === 0 ? (
+                <li>Reading VinceRegistry…</li>
+              ) : null}
               {listed.map((market) => (
                 <li key={market.id}>
                   {market.display}
                   {market.ready ? `  ${market.floor}` : `  ${market.note ?? "not sourced"}`}
+                  {market.liveRpcHuman ? `  RPC ${market.liveRpcHuman}` : ""}
                   {"lastPrice" in market && market.lastPrice
                     ? `  attested ${market.lastPrice}`
                     : ""}
                   {"windowLive" in market && market.windowLive ? "  PASS" : ""}
                 </li>
               ))}
+              {!protocol.loading && listed.length === 0 ? (
+                <li>{protocol.error ?? "No listed markets on-chain."}</li>
+              ) : null}
             </ul>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <button
@@ -248,24 +263,24 @@ export function GateClient({
                   disabled={submitting || !result.submitReady}
                   className="inline-flex h-11 items-center rounded-[14px] border border-line bg-surface px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-accent disabled:text-mute"
                 >
-                  {submitting ? "Submitting Sepolia policy…" : "Submit Sepolia policy"}
+                  {submitting ? "Submitting on Creditcoin…" : "Submit on Creditcoin"}
                 </button>
               ) : (
                 <p className="text-[13px] text-mute">
-                  Proofs are live. Sepolia policy is not deployed on this build, so
+                  Proofs are live. Creditcoin policy is not deployed on this build, so
                   the window is preview-only.
                 </p>
               )}
               {result.decision === "PASS" ? (
                 <Link
-                  href="/vault"
+                  href="/desk"
                   className="inline-flex h-11 items-center rounded-[14px] bg-accent px-5 text-[14px] font-medium text-on-accent transition-colors duration-200 hover:bg-accent-deep"
                 >
-                  Continue to vault
+                  Open the desk
                 </Link>
               ) : (
                 <p className="text-[13px] text-mute">
-                  Continue stays closed until PASS.
+                  Desk stays locked until PASS.
                 </p>
               )}
               <AdvancedPanel result={result} />

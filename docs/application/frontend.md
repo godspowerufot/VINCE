@@ -1,6 +1,6 @@
 # Frontend
 
-Status: Gate, vault, and markets wired in `web/`. Worker at `POST /api/observe`. On-chain submit/borrow need a CC3 Testnet deploy.
+Status: Gate, desk, and markets wired in `web/`. Worker at `POST /api/observe`. Settlement is Creditcoin Testnet (ADR-014). The product is the gate + desk (ADR-013).
 
 ## Stack
 
@@ -57,7 +57,8 @@ Required             ≥ $0.05
 ✓ Market condition satisfied
 Window               29:12 remaining
 
-              [ Continue ]
+              [ Submit on Creditcoin ]
+              [ Open the desk ]
 ```
 
 Advanced panel (collapsed):
@@ -98,8 +99,8 @@ That last distinction is mandatory. See [../ux/error-states.md](../ux/error-stat
 ## Data rules
 
 - Display tickers, key by address.
-- Truncate addresses; link to the correct explorer (Ethereum or Sepolia vs Creditcoin).
-- Preview prices from the API must be labeled **Preview** until on-chain decision events exist.
+- Truncate addresses; link to the correct explorer (Ethereum vs Creditcoin Testnet).
+- Worker policy is labeled **Preview** until `VinceGate` emits an on-chain decision.
 - Do not hide REJECT reasons.
 
 ## Routes (planned)
@@ -107,8 +108,8 @@ That last distinction is mandatory. See [../ux/error-states.md](../ux/error-stat
 ```text
 /                       landing + three-step onboarding
 /gate                   Verified Market Gate (paste-first)
+/desk                   RWA desk — locked until PASS
 /markets                listed feeds; owner listMarket
-/vault                  Phase 6; requires live PASS window
 /activity               user's proofs and decisions
 ```
 
@@ -116,7 +117,7 @@ Click-by-click first session: [../ux/onboarding.md](../ux/onboarding.md).
 
 ## Wallet
 
-Connect to Ethereum Sepolia for policy and vault. Attestcoin proofs are prepared server-side against Creditcoin (view). Users should not need CTC.
+Connect to Creditcoin Testnet for policy submit. Attestcoin proofs are prepared server-side, then `VinceGate` re-checks `0x0FD2` on-chain. Users need CTC.
 
 ## Accessibility
 

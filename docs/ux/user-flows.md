@@ -1,6 +1,6 @@
 # User flows
 
-The product is a **paste-a-tx verification gate**, then a vault that consumes a 30-minute PASS window. Users should not operate Attestcoin, but they **do** paste a source tx hash.
+The product is a **paste-a-tx verification gate**, then a Creditcoin desk that consumes a 30-minute PASS window. Users should not operate Attestcoin, but they **do** paste a source tx hash.
 
 First-visit clicks, copy, and “where do I get a tx” live in [onboarding.md](./onboarding.md).
 
@@ -13,7 +13,7 @@ First-visit clicks, copy, and “where do I get a tx” live in [onboarding.md](
         ↓
 two verdicts
         ↓
-PASS → Continue to vault (now connect Creditcoin)
+PASS → Connect Creditcoin → Submit → Open the desk
 REJECT → stay; do not silently swap the hash
 ```
 
@@ -26,7 +26,7 @@ flowchart TB
   W --> PR[Generate proof]
   PR --> R[Verify on Creditcoin]
   R --> D{Policy}
-  D -->|PASS| G[Continue / open window]
+  D -->|PASS| G[Submit / open window]
   D -->|REJECT| X[Stop with reasons]
 ```
 
@@ -47,24 +47,28 @@ Verifying on Creditcoin...
         ↓
 Market condition satisfied
         ↓
-[Continue]
+[ Submit on Creditcoin ]
+        ↓
+[ Open the desk ]
 ```
 
 This flow **is** the application. Everything else is a consumer of it.
 
-## Flow B — Vault (same verification)
+## Flow B — Desk (same verification)
 
 ```text
-Deposit vUSD
+Prove a listed feed-update on the gate
         ↓
-Paste feed-update tx (or reuse live window)
+Submit on Creditcoin (verifyAndEmit)
         ↓
 PASS window 30 minutes
         ↓
-borrowLimit = collateral * 50%
+/desk  Release financing
         ↓
-Window expired → borrow reverts until a newer tx is verified
+Window expired → release reverts until a newer tx is verified
 ```
+
+Lab vault borrow/lend is not a user flow.
 
 ## Flow C — Bad paste (must be distinct in UI)
 

@@ -6,7 +6,7 @@ VINCE is a protocol, not a dashboard. Prefer correctness, explicit assumptions, 
 
 ## Core law
 
-No financial action may depend solely on an off-chain price. **Attestation** is Attestcoin `verifySingle` on Creditcoin (view, no CTC). **Hackathon policy + vault** settle on Ethereum Sepolia ([ADR-012](./docs/decisions/ADR-012-sepolia-policy-lab.md)). Sepolia does not host `0x0FD2`. Production Creditcoin ASC remains in `contracts/` for later.
+No financial action may depend solely on an off-chain price. **Attestation** is Attestcoin on Creditcoin: worker `verifySingle` (view) then `VinceVerifier.verifyAndEmit` at `0x0FD2` (CTC). **Hackathon policy + desk** settle on Creditcoin Testnet ([ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md)). Sepolia does not host `0x0FD2`. Do not invent it there.
 
 ## Capability rules
 
@@ -59,6 +59,6 @@ No financial action may depend solely on an off-chain price. **Attestation** is 
 
 ## Stack rules
 
-30. Policy/vault lab contracts target Ethereum Sepolia. Attestcoin verification stays a Creditcoin view. Do not invent `0x0FD2` on Sepolia.
+30. Policy + desk settle on Creditcoin Testnet. `VinceVerifier` calls `0x0FD2` there. Do not invent `0x0FD2` on Sepolia.
 31. Cross-chain proofs use `@gluwa/usc-sdk`. Do not write a custom prover unless an ADR authorizes `RawProofBuilder`.
-32. Fail closed for security-critical actions when Attestcoin, the proof builder, or attestation is unavailable. Sepolia Submit stays disabled unless `verifySingle` is true.
+32. Fail closed for security-critical actions when Attestcoin, the proof builder, or attestation is unavailable. Creditcoin Submit stays disabled unless `verifySingle` is true.

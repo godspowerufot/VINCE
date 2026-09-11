@@ -20,7 +20,9 @@ async function deployLab() {
   const vault = await Vault.deploy(await policy.getAddress(), await vusd.getAddress());
   await vusd.mint(await vault.getAddress(), ethers.parseEther("1000000"));
   await registry.listMarket("eth-bat-usd", 3, 1, BAT, 5_000_000, 3600, "BAT/USD");
-  return { owner, user, registry, policy, vusd, vault };
+  const Desk = await ethers.getContractFactory("VinceDesk");
+  const desk = await Desk.deploy(await policy.getAddress());
+  return { owner, user, registry, policy, vusd, vault, desk };
 }
 
 describe("VINCE Sepolia policy lab", function () {
@@ -65,15 +67,15 @@ describe("VINCE Sepolia policy lab", function () {
     ).to.be.revertedWith("REPLAY");
   });
 
-  it("vault borrow is 50% LTV inside the window", async function () {
-    const { policy, vault, vusd, user } = await loadFixture(deployLab);
+  it("desk release reverts without PASS", async function () {
+    const { desk } = await loadFixture(deployLab);
+    await expect(desk.releaseFinancing()).to.be.revertedWith("NO_PASS");
+  });
+
+  it("desk can release financing inside a PASS window", async function () {
+    const { policy, desk, user } = await loadFixture(deployLab);
     const now = await time.latest();
     await policy.submitAttestedFeedUpdate(TX, 3, BAT, 7_186_539, now, MERKLE, CONT);
-    await vusd.connect(user).faucet();
-    await vusd.connect(user).approve(await vault.getAddress(), ethers.parseEther("1000"));
-    await vault.connect(user).deposit(ethers.parseEther("1000"));
-    expect(await vault.borrowLimitOf(user.address)).to.equal(ethers.parseEther("500"));
-    await vault.connect(user).requestBorrow(ethers.parseEther("500"));
-    expect(await vault.debt(user.address)).to.equal(ethers.parseEther("500"));
+    await expect(desk.connect(user).releaseFinancing()).to.emit(desk, "FinancingReleased");
   });
 });

@@ -45,7 +45,9 @@ UI **returns** the decoded market (`description()` / emitter) on every verified 
 4. Adding a market is configuration (owner-gated). It is not a new protocol.
 5. Base B20 tokens remain later listings, same registry, different `sourceChainKey` when Attestcoin supports Base.
 
-## MVP seed listings (Ethereum, chainKey 3)
+## Candidate listings (Ethereum, chainKey 3)
+
+Deploy does **not** auto-list. Live registry may be empty. The rows below are sourced candidates for owner `listMarket`, not a shipped catalog.
 
 | id | Display | Feed / aggregator | minimumPrice | Status |
 | --- | --- | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Evidence worker
 
-Implemented as `POST /api/observe` in `web/`. It generates Merkle + continuity proofs and calls `verifySingle` as a **preview**. On-chain `verifyAndEmit` happens when the user submits to `VinceGate`. The worker never rewrites the pasted hash.
+Implemented as `POST /api/observe` in `web/`. It generates Merkle + continuity proofs and calls `verifySingle` as a **preview**. On-chain `verifyAndEmit` happens when the user submits to `VinceGate` on Creditcoin Testnet. The worker never rewrites the pasted hash.
 
 Primary UX: **user pastes a tx hash** ([ADR-010](../decisions/ADR-010-user-pastes-tx.md)).
 
@@ -9,15 +9,15 @@ Primary UX: **user pastes a tx hash** ([ADR-010](../decisions/ADR-010-user-paste
 ```text
 accept pasted tx hash
         ↓
-load tx on registered source RPC
+load tx on Ethereum RPC
         ↓
 wait for that block to be attested
         ↓
 fetch Merkle + continuity proofs
         ↓
-submit to VinceVerifier
+verifySingle (view, fail closed)
         ↓
-record Creditcoin tx hash and events
+return preview to UI  (user submits to VinceGate)
 ```
 
 ## Non-jobs

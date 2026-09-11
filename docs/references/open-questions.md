@@ -19,8 +19,8 @@ Do not label this hash as TSLAc or Base. It is BAT/USD on Ethereum.
 
 ## Still open
 
-1. Ethereum TSLA/USD proxy + aggregator (optional second listing). Not required for the BAT fixture to work.
-2. More Ethereum USD feeds as extra registry rows (AAPL, ETH, …) — configuration, same pipeline.
+1. Ethereum TSLA/USD proxy + aggregator (optional listing). Do not invent it.
+2. Owner has not listed any feed on live Creditcoin `VinceRegistry` (empty by design). A paste is `REJECT_FEED` until `listMarket`.
 3. Base B20 — later, only if `getSupportedChains()` lists Base.
 
 ## Honesty checks

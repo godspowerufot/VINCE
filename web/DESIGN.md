@@ -7,7 +7,7 @@ Written from the shipped preview UI in `web/`, 2026-09-10.
 | Surface | Mode |
 | --- | --- |
 | `/` | Persuade, restrained |
-| `/gate` `/vault` `/activity` | Operate |
+| `/gate` `/desk` `/markets` `/activity` | Operate |
 
 ## World
 

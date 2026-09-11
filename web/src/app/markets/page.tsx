@@ -8,7 +8,7 @@ import { PROTOCOL, protocolDeployed } from "@/lib/protocol/deployments";
 import { floorLabel } from "@/lib/protocol/markets";
 import { useProtocolStatus } from "@/lib/protocol/useProtocolStatus";
 import type { ListedMarket } from "@/lib/protocol/types";
-import { connectSepolia } from "@/lib/protocol/wallet";
+import { connectSettlement, sendSettlementTx, walletError } from "@/lib/protocol/wallet";
 import { shortenHash } from "@/lib/hash";
 
 export default function MarketsPage() {
@@ -29,7 +29,7 @@ export default function MarketsPage() {
 
   async function loadOwner() {
     if (!PROTOCOL.registry) throw new Error("Registry is not deployed.");
-    const { provider, address } = await connectSepolia();
+    const { provider, address } = await connectSettlement();
     const registry = new Contract(PROTOCOL.registry, REGISTRY_ABI, provider);
     const [listed, registryOwner] = await Promise.all([
       registry.listedMarkets(),
@@ -73,8 +73,9 @@ export default function MarketsPage() {
               Markets
             </h1>
             <p className="mt-3 text-[15px] leading-6 text-mute">
-              Listed Ethereum feeds. Identity is the aggregator address, never the
-              ticker. Pasting a proof does not add a row.
+              Listed Ethereum feeds from VinceRegistry. Identity is the aggregator
+              address, never the ticker. RPC latest is live and unverified.
+              Attested is a proven feed-update.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <button
@@ -96,12 +97,19 @@ export default function MarketsPage() {
               </button>
             </div>
             <p className="mt-4 text-[13px] text-mute">
-              Source: {status.source === "registry" ? "VinceRegistry" : "seed"}
+              Source: {status.source === "registry" ? "VinceRegistry" : "none"}
             </p>
           </div>
         }
         right={
           <div className="max-w-lg space-y-10">
+            {rows.length === 0 ? (
+              <p className="text-[15px] leading-6 text-mute">
+                No markets listed. Unlisted emitters{" "}
+                <span className="text-ink">REJECT_FEED</span>. Owner lists a sourced
+                aggregator; paste does not add a row.
+              </p>
+            ) : (
             <ul className="divide-y divide-line">
               {rows.map((market) => {
                 const lastPrice =
@@ -120,7 +128,7 @@ export default function MarketsPage() {
                       </p>
                       <p className="text-[13px] text-mute">
                         {windowLive
-                          ? "PASS · borrow open"
+                          ? "PASS"
                           : market.ready
                             ? market.floor
                             : market.note}
@@ -129,10 +137,20 @@ export default function MarketsPage() {
                     {market.ready ? (
                       <p className="mt-2 text-[13px] text-mute">
                         Floor {market.floor}
+                        {market.liveRpcHuman ? (
+                          <>
+                            {" "}
+                            · RPC latest{" "}
+                            <span className="tabular-nums text-ink">
+                              {market.liveRpcHuman}
+                            </span>{" "}
+                            (not attested)
+                          </>
+                        ) : null}
                         {lastPrice ? (
                           <>
                             {" "}
-                            · last attested{" "}
+                            · attested{" "}
                             <span className="tabular-nums text-ink">{lastPrice}</span>
                           </>
                         ) : null}
@@ -151,6 +169,7 @@ export default function MarketsPage() {
                 );
               })}
             </ul>
+            )}
 
             {isOwner ? (
               <form
@@ -161,15 +180,14 @@ export default function MarketsPage() {
                   setMessage(null);
                   void (async () => {
                     if (!PROTOCOL.registry) throw new Error("Registry is not deployed.");
-                    const { provider } = await connectSepolia();
-                    const signer = await provider.getSigner();
+                    const { signer, address } = await connectSettlement();
                     const registry = new Contract(PROTOCOL.registry, REGISTRY_ABI, signer);
                     const dollars = Number(floor);
                     if (!Number.isFinite(dollars) || dollars <= 0) {
                       throw new Error("Floor must be a USD number.");
                     }
                     const minimumPrice = BigInt(Math.round(dollars * 1e8));
-                    const tx = await registry.listMarket(
+                    const data = registry.interface.encodeFunctionData("listMarket", [
                       id.trim(),
                       3,
                       1,
@@ -177,8 +195,13 @@ export default function MarketsPage() {
                       minimumPrice,
                       3600,
                       name.trim(),
-                    );
-                    await tx.wait();
+                    ]);
+                    const sent = await sendSettlementTx(signer, {
+                      from: address,
+                      to: PROTOCOL.registry,
+                      data,
+                    });
+                    await sent.wait();
                     await loadOwner();
                     setMessage(`Listed ${name.trim()}.`);
                     setId("");
@@ -187,7 +210,7 @@ export default function MarketsPage() {
                     setFloor("");
                   })()
                     .catch((err: unknown) =>
-                      setMessage(err instanceof Error ? err.message : "List failed."),
+                      setMessage(walletError(err)),
                     )
                     .finally(() => setBusy(false));
                 }}
@@ -223,7 +246,7 @@ export default function MarketsPage() {
               </p>
             ) : (
               <p className="text-[13px] leading-6 text-mute">
-                Registry is not deployed on Sepolia yet. Seed list is BAT/USD only.
+                Registry is not deployed on Creditcoin yet.
               </p>
             )}
             {message ? <p className="text-[13px] text-mute">{message}</p> : null}

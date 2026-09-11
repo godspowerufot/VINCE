@@ -8,25 +8,27 @@ How can a Creditcoin application make a financial decision based on an event tha
 
 A Creditcoin contract may need a fact such as:
 
-> Did TSLAc actually trade at or above $250 on the source market?
+> Did this listed Ethereum USD feed print at or above its floor?
+
+The intended later question is tokenized-stock activity on Base (TSLAc). Attestcoin does not list Base today, so MVP proves an Ethereum Chainlink feed-update instead of inventing a Base proof ([ADR-005](./decisions/ADR-005-source-chain-feasibility.md)).
 
 A naive architecture does this:
 
 ```text
-Base
+Source chain
   ↓
 RPC / API
   ↓
 VINCE backend
   ↓
-"TSLAc = $250"
+"price = 250"
   ↓
 Creditcoin
 ```
 
 ```mermaid
 flowchart TB
-  BASE["Base market"] --> RPC["RPC or price API"]
+  SRC["Source market (MVP: Ethereum)"] --> RPC["RPC or price API"]
   RPC --> BE["Backend"]
   BE -->|"unverified assertion"| CC["Creditcoin contract"]
 ```
@@ -37,11 +39,11 @@ That is the trust problem VINCE is built to reduce.
 
 ## What is not the problem
 
-VINCE is not trying to invent a new tokenized stock. Coinbase-issued B20 tokens already exist on Base.
+VINCE is not trying to invent a new tokenized stock. Coinbase-issued B20 tokens already exist on Base; they are a later listing.
 
 VINCE is not trying to replace Attestcoin. Attestcoin already proves source-chain transaction inclusion on Creditcoin.
 
-VINCE is not, in MVP, trying to be a full lending market. Lending is a later consumer of a verified decision.
+VINCE is not, in MVP, trying to be a full lending market. The desk is a later-shaped consumer of a verified decision. The vault is lab-only.
 
 ## What is the problem, precisely
 

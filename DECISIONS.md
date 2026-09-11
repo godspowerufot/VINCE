@@ -26,7 +26,10 @@ Status vocabulary:
 | [ADR-008](./docs/decisions/ADR-008-backend-not-source-of-truth.md) | Workers prepare evidence; contracts decide | Accepted |
 | [ADR-009](./docs/decisions/ADR-009-application-stack.md) | Next.js, TypeScript, Tailwind, Hardhat, Solidity | Accepted |
 | [ADR-010](./docs/decisions/ADR-010-user-pastes-tx.md) | User pastes source tx; protocol validates | Accepted |
-| [ADR-012](./docs/decisions/ADR-012-sepolia-policy-lab.md) | Sepolia policy lab; Attestcoin stays Creditcoin view | Accepted |
+| [ADR-011](./docs/decisions/ADR-011-multi-market-registry.md) | Many registered markets, not TSLA-only | Accepted |
+| [ADR-012](./docs/decisions/ADR-012-sepolia-policy-lab.md) | Sepolia policy lab; Attestcoin stays Creditcoin view | Superseded |
+| [ADR-013](./docs/decisions/ADR-013-gate-is-the-product.md) | Gate is the product; vault is lab-only; no JSON catalog | Accepted |
+| [ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md) | Live settlement is Creditcoin Testnet | Accepted |
 
 ## How to add a decision
 
@@ -42,8 +45,9 @@ The **models** above are closed. Remaining instances:
 - Ethereum **TSLA/USD** proxy + aggregator + a qualifying `AnswerUpdated` tx (Phase 2 used BAT/USD)
 - Optional Sepolia smoke feed
 
-Confirmed 2026-09-10:
+Confirmed 2026-09-10 / 2026-09-11:
 
 - Proof Builder: `https://prover.cc3-testnet.creditcoin.network`
 - Ethereum `chainKey` 3 on CC3 Testnet
 - Pasted tx verified: see [docs/testing/phase2-experiment-log.md](./docs/testing/phase2-experiment-log.md)
+- Live settlement: Creditcoin Testnet ([ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md))

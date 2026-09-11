@@ -19,4 +19,4 @@ alwaysApply: true
 - User **pastes** the source tx. Protocol validates it. Worker must not swap in another hash.
 - MVP price is a registered Chainlink feed-update. **Many markets**, not TSLA-only. Each listing has its own threshold. Unlisted emitter → REJECT_FEED.
 - Vault: 30-minute PASS window, 50% LTV, mock vUSD.
-- Hackathon policy + vault settle on **Ethereum Sepolia** (ADR-012). Attestation remains Attestcoin `verifySingle` on Creditcoin (view). Never claim Sepolia has `0x0FD2`.
+- Hackathon policy + desk settle on **Creditcoin Testnet** (ADR-014). `VinceVerifier` calls `0x0FD2` there. Sepolia lab (ADR-012) is superseded. Never claim Sepolia has `0x0FD2`.

@@ -1,0 +1,131 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "verifier_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "engine_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "engine",
+    "outputs": [
+      {
+        "internalType": "contract IVinceEngine",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "chainKey",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "blockHeight",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes",
+            "name": "encodedTransaction",
+            "type": "bytes"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "root",
+                "type": "bytes32"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "bytes32",
+                    "name": "hash",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "bool",
+                    "name": "isLeft",
+                    "type": "bool"
+                  }
+                ],
+                "internalType": "struct INativeQueryVerifier.MerkleProofEntry[]",
+                "name": "siblings",
+                "type": "tuple[]"
+              }
+            ],
+            "internalType": "struct INativeQueryVerifier.MerkleProof",
+            "name": "merkleProof",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "lowerEndpointDigest",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32[]",
+                "name": "roots",
+                "type": "bytes32[]"
+              }
+            ],
+            "internalType": "struct INativeQueryVerifier.ContinuityProof",
+            "name": "continuityProof",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct VinceGate.SourceProof",
+        "name": "proof",
+        "type": "tuple"
+      }
+    ],
+    "name": "submitSourceTransaction",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "decision",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string[]",
+        "name": "reasons",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
+      {
+        "internalType": "contract IVinceVerifier",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

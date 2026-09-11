@@ -4,7 +4,7 @@ import { WalletButton } from "@/components/WalletButton";
 const LINKS = [
   { href: "/", label: "Home", id: "home" },
   { href: "/gate", label: "Gate", id: "gate" },
-  { href: "/vault", label: "Vault", id: "vault" },
+  { href: "/desk", label: "Desk", id: "desk" },
   { href: "/markets", label: "Markets", id: "markets" },
   { href: "/activity", label: "Activity", id: "activity" },
 ] as const;
@@ -13,7 +13,7 @@ export function AppShell({
   active,
   children,
 }: {
-  active?: "gate" | "vault" | "activity" | "home" | "markets";
+  active?: "gate" | "desk" | "activity" | "home" | "markets";
   children: React.ReactNode;
 }) {
   return (
@@ -48,7 +48,7 @@ export function AppShell({
           <p className="hidden text-[12px] leading-5 text-mute lg:block">
             Ethereum source.
             <br />
-            Sepolia policy.
+            Creditcoin policy.
           </p>
         </div>
       </aside>

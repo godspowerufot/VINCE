@@ -1,9 +1,13 @@
 import { Contract, JsonRpcProvider } from "ethers";
 import { ENGINE_ABI, REGISTRY_ABI } from "./abi";
-import { SEPOLIA } from "./constants";
+import { ETHEREUM, SETTLEMENT } from "./constants";
 import { PROTOCOL, protocolDeployed } from "./deployments";
-import { floorLabel, formatUsd8, seedMarkets } from "./markets";
+import { floorLabel, formatUsd8 } from "./markets";
 import type { ListedMarket } from "./types";
+
+const FEED_ABI = [
+  "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+];
 
 export type ChainWindow = {
   market: string;
@@ -15,7 +19,7 @@ export type ChainWindow = {
 };
 
 export type MarketsPayload = {
-  source: "seed" | "registry";
+  source: "registry" | "none";
   markets: ListedMarket[];
   protocolDeployed: boolean;
   error?: string;
@@ -28,10 +32,25 @@ export type WindowPayload = {
   error?: boolean;
 };
 
-function provider() {
-  return new JsonRpcProvider(SEPOLIA.rpc, SEPOLIA.chainId, {
+function settlementProvider() {
+  return new JsonRpcProvider(SETTLEMENT.rpc, SETTLEMENT.chainId, {
     staticNetwork: true,
   });
+}
+
+async function ethereumProvider(): Promise<JsonRpcProvider | null> {
+  const extra = process.env.ETH_RPC;
+  const urls = extra ? [extra, ...ETHEREUM.rpcs] : [...ETHEREUM.rpcs];
+  for (const url of urls) {
+    try {
+      const provider = new JsonRpcProvider(url, 1, { staticNetwork: true });
+      await provider.getBlockNumber();
+      return provider;
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 function mapRows(rows: {
@@ -56,31 +75,58 @@ function mapRows(rows: {
       minimumPrice: row.minimumPrice.toString(),
       sourceChainKey: Number(row.sourceChainKey),
       maxAgeSeconds: Number(row.maxAgeSeconds),
+      liveRpcHuman: null,
+      liveRpcUpdatedAt: null,
     }));
+}
+
+async function attachLiveRpc(markets: ListedMarket[]): Promise<ListedMarket[]> {
+  const eth = await ethereumProvider();
+  if (!eth) return markets;
+  return Promise.all(
+    markets.map(async (market) => {
+      if (!market.feedAggregator) return market;
+      try {
+        const feed = new Contract(market.feedAggregator, FEED_ABI, eth);
+        const round = await feed.latestRoundData();
+        const answer = round.answer as bigint;
+        const updatedAt = Number(round.updatedAt);
+        return {
+          ...market,
+          liveRpcHuman: formatUsd8(answer),
+          liveRpcUpdatedAt: updatedAt,
+        };
+      } catch {
+        return market;
+      }
+    }),
+  );
 }
 
 export async function readMarkets(): Promise<MarketsPayload> {
   if (!protocolDeployed() || !PROTOCOL.registry) {
     return {
-      source: "seed",
-      markets: seedMarkets(),
+      source: "none",
+      markets: [],
       protocolDeployed: false,
+      error: "Registry is not deployed. No JSON catalog.",
     };
   }
   try {
-    const registry = new Contract(PROTOCOL.registry, REGISTRY_ABI, provider());
+    const registry = new Contract(PROTOCOL.registry, REGISTRY_ABI, settlementProvider());
     const rows = await registry.listedMarkets();
+    const markets = await attachLiveRpc(mapRows(rows));
     return {
       source: "registry",
-      markets: mapRows(rows),
+      markets,
       protocolDeployed: true,
     };
   } catch {
     return {
-      source: "seed",
-      markets: seedMarkets(),
-      protocolDeployed: false,
-      error: "Could not read registry. Showing seed list.",
+      source: "none",
+      markets: [],
+      protocolDeployed: true,
+      error: "Could not read VinceRegistry. Fail closed — no seed list.",
     };
   }
 }
@@ -90,7 +136,7 @@ export async function readWindow(): Promise<WindowPayload> {
     return { live: false, protocolDeployed: false, window: null };
   }
   try {
-    const rpc = provider();
+    const rpc = settlementProvider();
     const engine = new Contract(PROTOCOL.engine, ENGINE_ABI, rpc);
     const inWindow = Boolean(await engine.inWindow());
     const window = await engine.liveWindow();

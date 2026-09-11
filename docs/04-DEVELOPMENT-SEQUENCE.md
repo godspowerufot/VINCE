@@ -33,7 +33,7 @@ PHASE 8  Production UX + observability
 - Open questions are listed instead of guessed
 - ADR-002, ADR-003, ADR-005, ADR-006 accepted as models (instances still sourced)
 
-**Phase 3–6 implemented in-repo (2026-09-10).** Local Hardhat tests cover registry, verifier/engine, and vault. CC3 Testnet deploy is gated on a funded `CREDITCOIN_PRIVATE_KEY`.
+**Phase 3–6 implemented in-repo.** Local Hardhat tests cover registry, verifier/engine, desk, and lab vault. **CC3 Testnet deploy is live** ([ADR-014](./decisions/ADR-014-creditcoin-settlement.md)). Addresses: [`contracts/deployments/creditcoin-testnet.json`](../contracts/deployments/creditcoin-testnet.json). Registry starts empty.
 
 ## Phase 1 — Source-market investigation
 
@@ -72,9 +72,9 @@ If a later paste fails, fix Attestcoin integration before changing vault math.
 
 **Goal:** An ASC on Creditcoin that verifies proofs on-chain, checks success status, and records the verified tx key.
 
-**Done when:** a Hardhat-deployed contract on CC3 Testnet emits a verification event for the Phase 2 transaction, with replay protection.
+**Done when:** a Hardhat-deployed contract on CC3 Testnet emits a verification event for a pasted transaction, with replay protection.
 
-Local tests: `cd contracts && npm test`. Live deploy: `npm run deploy:testnet`.
+**Done 2026-09-11.** `VinceVerifier` + `VinceGate` live on Creditcoin Testnet. Worker still fail-closes on `verifySingle` before the wallet spends CTC.
 
 ## Phase 4 — Decision engine
 
@@ -86,13 +86,15 @@ Local tests: `cd contracts && npm test`. Live deploy: `npm run deploy:testnet`.
 
 **Goal:** User-facing MVP: paste tx, see proof vs policy.
 
-**Done when:** Next.js can paste a hash, wait, verify, and distinguish proof failure from `REJECT_FEED` / `REJECT_THRESHOLD`. Copy says Ethereum (or Sepolia smoke), never Base for those proofs.
+**Done when:** Next.js can paste a hash, wait, verify, submit on Creditcoin, and distinguish proof failure from `REJECT_FEED` / `REJECT_THRESHOLD`. Copy says Ethereum (or Sepolia smoke), never Base for those proofs.
 
-## Phase 6 — Collateral vault
+**Done 2026-09-11.** Routes: `/gate`, `/desk`, `/markets`. Desk consumes the PASS window.
 
-**Goal:** Consume the 30-minute PASS window. 50% LTV on vUSD.
+## Phase 6 — Collateral vault (lab)
 
-**Done when:** `borrowLimit = collateral * 50%` inside the window, 0 after expiry or REJECT, no verification code inside the vault.
+**Goal:** Consume the 30-minute PASS window. 50% LTV on vUSD. **Not in the product UI** ([ADR-013](./decisions/ADR-013-gate-is-the-product.md)). The hackathon consumer is `VinceDesk`.
+
+**Done when:** `borrowLimit = collateral * 50%` inside the window, 0 after expiry or REJECT, no verification code inside the vault. Lab contracts may deploy on Creditcoin; `/vault` is not a route.
 
 ## Phase 7 — Manipulation resistance
 

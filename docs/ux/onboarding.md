@@ -1,23 +1,24 @@
 # Onboarding UX
 
-Status: first-session UI shipped in `web/` as a preview (no protocol).
+Status: first-session UI shipped in `web/`, wired to Creditcoin Testnet (ADR-014).
 
 The first session must teach **one idea by doing it**, not by explaining Attestcoin.
 
 > You point at a real Ethereum transaction. Creditcoin proves it was included. VINCE decides whether that **listed** market’s rule passed. Proof and PASS are different.
 
-Wallet is not the first click. Paste is. Connect Creditcoin only when the user wants a 30-minute window / vault action ([ADR-010](../decisions/ADR-010-user-pastes-tx.md), [ADR-011](../decisions/ADR-011-multi-market-registry.md)).
+Wallet is not the first click. Paste is. Connect Creditcoin Testnet only to submit policy after `verifySingle` ([ADR-010](../decisions/ADR-010-user-pastes-tx.md), [ADR-014](../decisions/ADR-014-creditcoin-settlement.md)).
 
 ## Routes and first clicks
 
 ```text
-/            Landing — what this is, three steps, Open the gate
-/gate        Paste hash. One primary button: Verify transaction
-/vault       After PASS (or with a live window). Deposit / borrow vUSD
-/activity    Past proofs and decisions (same two-verdict pattern)
+/            Landing — what this is, Open the gate
+/gate        Paste hash. Verify transaction
+/desk        Locked until PASS. Release financing
+/markets     VinceRegistry listings
+/activity    Past proofs and decisions
 ```
 
-Nav: **Gate** · **Vault** · **Activity**. Logo returns to `/`. No “Markets” admin screen in the default user nav.
+Nav: **Gate** · **Desk** · **Markets** · **Activity**.
 
 ## Screen 0 — Landing (`/`)
 
@@ -38,9 +39,9 @@ How it works
   2. Paste it here. We prove inclusion on Creditcoin
   3. See two results: proof verified  ·  condition met or not
 
-Listed now     BAT/USD
+Listed now     (from VinceRegistry — empty until owner lists)
 Coming         TSLA/USD (address still being sourced)
-Not auto-added GOOGL, SPCX, or any unlisted feed
+Not auto-added GOOGL, SPCX, BAT, or any unlisted feed
 ```
 
 Do **not** lead with Merkle, `0x0FD2`, or chainKey. Do **not** say “Verified on Base.” MVP source is Ethereum.
@@ -54,8 +55,8 @@ This is the onboarding that usually fails. Spell the clicks.
 ```text
 VINCE does not pick a print for you. You point at one.
 
-1. Open a listed feed on Ethereum
-   Example listed market: BAT/USD
+1. Open an Ethereum Chainlink feed-update
+   Only an owner-listed aggregator can PASS
    Chainlink Data Feeds → Ethereum → that pair
 2. Open a recent update on the block explorer
 3. Copy the transaction hash (64 hex characters after 0x)
@@ -81,8 +82,7 @@ Paste an Ethereum feed-update transaction
 [  0x…                                         ]
 
 Listed markets this gate will score
-  BAT/USD   ≥ $0.05
-  TSLA/USD  ≥ $250   (when aggregator is sourced)
+  (rows from VinceRegistry, or empty)
 
               [ Verify transaction ]
 
@@ -124,7 +124,7 @@ Required           ≥ $0.05          (that listing’s floor)
 
 Window             29:12 remaining
 
-              [ Continue to vault ]
+              [ Open the desk ]
 
 [ Verification details ]            collapsed
 ```
@@ -169,21 +169,20 @@ Observed  $0.03
 
 Never: “Verification failed” when the proof succeeded.
 
-## Screen 4 — Vault (`/vault`)
+## Screen 4 — Markets (`/markets`)
 
-Only after PASS, or if a live window already exists for this wallet.
+Listed feeds from VinceRegistry. Two prices, labeled:
 
 ```text
-Connect Creditcoin Testnet          chain id 102031
+(empty until owner lists)
 
-Collateral     vUSD
-Window         29:12  (from the gate)
-
-Deposit
-Borrow         up to 50% of collateral while the window is live
+When listed:
+  DISPLAY    floor ≥ $X
+  RPC latest $…   (Ethereum read — not attested)
+  Attested   $…   (proven feed-update, if one was submitted)
 ```
 
-If they open `/vault` with no window: **No live market window. Paste a listed feed-update on the gate.** Link back to `/gate`. Do not run a silent proof.
+RPC latest cannot PASS. Only a pasted, proven print can.
 
 ## What each click is for
 
@@ -193,7 +192,7 @@ If they open `/vault` with no window: **No live market window. Paste a listed fe
 | Where do I get a transaction? | User chooses the print; VINCE does not hunt |
 | Verify transaction | Inclusion proof is a wait, not an API quote |
 | Two checkmarks | Proof ≠ PASS |
-| Continue to vault | Settlement is a consumer of a 30-minute window |
+| See listed markets | PASS is a policy result, not a borrow unlock |
 | Verification details | Optional audit; Merkle lives here only |
 
 ## Copy that must never appear on the default path

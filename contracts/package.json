@@ -7,8 +7,10 @@
     "test": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
     "deploy:sepolia": "hardhat run scripts/deploy-sepolia.ts --network sepolia",
+    "deploy:desk:sepolia": "hardhat run scripts/deploy-desk-sepolia.ts --network sepolia",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network creditcoin_testnet",
-    "list-market": "hardhat run scripts/list-market.ts --network creditcoin_testnet"
+    "list-market": "hardhat run scripts/list-market.ts --network creditcoin_testnet",
+    "unlist-all:sepolia": "hardhat run scripts/unlist-all-sepolia.ts --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

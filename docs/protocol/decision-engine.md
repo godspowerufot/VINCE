@@ -1,6 +1,6 @@
 # Decision engine
 
-The decision engine is the protocol. The vault is a client of it.
+The decision engine is the protocol. The desk is a client of it. The vault is a lab client.
 
 ## Pipeline
 
@@ -13,7 +13,7 @@ POLICY            rule results
         ↓
 DECISION          PASS | REJECT
         ↓
-EXECUTION         gate / vault
+EXECUTION         gate window / desk
 ```
 
 ```mermaid

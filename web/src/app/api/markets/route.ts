@@ -1,4 +1,4 @@
-import { readMarkets } from "@/lib/protocol/sepoliaRead";
+import { readMarkets } from "@/lib/protocol/settlementRead";
 
 export const runtime = "nodejs";
 

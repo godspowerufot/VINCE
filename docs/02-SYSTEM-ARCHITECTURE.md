@@ -2,22 +2,23 @@
 
 This expands [ARCHITECTURE.md](../ARCHITECTURE.md). If the two ever drift, the root file is the summary and this file is the working map.
 
+Live settlement: Creditcoin Testnet `102031` ([ADR-014](./decisions/ADR-014-creditcoin-settlement.md)). MVP source: Ethereum (`chainKey` 3). Product: gate + desk ([ADR-013](./decisions/ADR-013-gate-is-the-product.md)).
+
 ## Layered system
 
 ```mermaid
 flowchart TB
   subgraph APP["Application"]
     UI["Next.js UI"]
-    API["API"]
+    API["POST /api/observe"]
     W["Evidence worker"]
     UI --> API --> W
   end
 
-  subgraph SRC["Market layer"]
-    BASE["Base"]
-    TOKENS["B20 tokenized stocks"]
-    VENUE["Approved DEX"]
-    BASE --- TOKENS --- VENUE
+  subgraph SRC["Market layer — Ethereum MVP"]
+    ETH["Ethereum Mainnet"]
+    FEED["Chainlink AnswerUpdated"]
+    ETH --- FEED
   end
 
   subgraph PROOF["Verification layer"]
@@ -28,144 +29,81 @@ flowchart TB
   end
 
   subgraph VINCE["Decision + settlement on Creditcoin"]
-    VER["Verifier adapter"]
-    REG["Market registry"]
-    ENG["Decision engine"]
-    GATE["Verified Market Gate"]
-    VAULT["Vault — later"]
+    VER["VinceVerifier"]
+    REG["VinceRegistry"]
+    ENG["VinceEngine"]
+    GATE["VinceGate"]
+    DESK["VinceDesk"]
     VER --> ENG
     REG --> ENG
-    ENG --> GATE
-    ENG --> VAULT
+    GATE --> VER
+    ENG --> DESK
   end
 
-  W -->|"discover candidate tx"| SRC
+  W -->|"load pasted tx"| SRC
   W -->|"waitUntilHeightAttested + getProof"| PAPI
+  W -->|"verifySingle view"| BP
   ATT --> CI
   PAPI --> W
-  W -->|"encoded tx + proofs"| VER
+  UI -->|"submitSourceTransaction"| GATE
   VER --> BP
   BP --> VER
 ```
+
+Vault / mock vUSD may exist on-chain as lab contracts. They are not in this diagram because they are not the product.
 
 ## Component responsibilities
 
 ### Evidence worker
 
-Off-chain. May:
+Off-chain (`web/src/lib/protocol/observe.ts`, `POST /api/observe`). May:
 
-- watch approved pools and assets
-- select a candidate transaction
+- accept a **user-pasted** tx hash (never swap it)
+- load the Ethereum receipt
 - wait for attestation
 - request Merkle and continuity proofs
-- submit proofs to VINCE contracts
-- retry, log, and distinguish failure stages
+- call `verifySingle` as a fail-closed preview
+- preview policy against `VinceRegistry` (labeled preview until on-chain submit)
 
 Must not:
 
 - be treated as an oracle
 - have an admin function that writes a price
 - skip verification on a "happy path"
+- list a market as a side effect of paste
 
 See [application/evidence-worker.md](./application/evidence-worker.md).
 
-### VINCE verifier adapter
+### VinceVerifier
 
-On Creditcoin. Calls the Block Prover precompile, requires `true`, then hands verified bytes to normalization. This is an Attestcoin Smart Contract in Attestcoin vocabulary.
+On Creditcoin. Calls Block Prover `verifyAndEmit`, requires `true`, requires receipt `0x1`, records a replay key. This is an Attestcoin Smart Contract. It does not compute a price.
 
-### Market registry
+### VinceRegistry
 
-On Creditcoin. Stores approved `chainKey`, asset addresses, **feed** addresses, pool addresses, quote asset, thresholds, and freshness. Configuration, not observation. MVP price emitter is `feed`, not `pool`.
+On Creditcoin. Owner `listMarket` / `unlistMarket` / `pauseMarket`. Identity is `feedAggregator` (log emitter). Starts empty. Unlisted emitter → `REJECT_FEED`.
 
-### Decision engine
+### VinceEngine
 
-On Creditcoin. Pure interpretation of verified observations against registry policy. Emits `PASS` / `REJECT` with reason codes.
+On Creditcoin. Decode `AnswerUpdated` from proven bytes, apply that listing’s floor and freshness, open a 30-minute PASS window.
 
-### Verified Market Gate
+### VinceGate
 
-On Creditcoin. MVP product surface. A user action continues only after a current `PASS` for the requested condition.
+On Creditcoin. User-facing submit of Merkle + continuity + encoded tx. Only the gate may call `engine.evaluate`.
 
-### Vault
+### VinceDesk
 
-On Creditcoin. Phase 6. Deposits, borrow limits, lock/unlock, later liquidation. It consumes decisions. It does not reimplement verification.
+On Creditcoin. Hackathon consumer. `releaseFinancing()` requires `engine.inWindow()`. Emits `FinancingReleased`. Not a money market.
 
-## Data objects
-
-These are conceptual. Solidity shapes come after ADRs close.
-
-### RawEvidence
-
-```text
-sourceChainKey
-sourceChainId
-blockNumber
-txHash
-txTo
-poolAddress
-assetAddress
-quoteAddress
-logs
-timestamp
-```
-
-### InclusionProof
-
-```text
-chainKey
-headerNumber
-txBytes
-merkleProof
-continuityProof
-```
-
-Official SDK field names from Attestcoin docs: `chainKey`, `headerNumber`, `txHash`, `txBytes`, `merkleProof`, `continuityProof`, `cached`.
-
-### MarketObservation
-
-```text
-asset            address
-market           approved pool
-quote            address
-observedPrice    integer, documented scale
-observedAt       source timestamp or block time
-liquidity        if policy requires it
-rawAmounts       decoded swap amounts
-```
-
-### PolicyConfig
-
-```text
-minimumPrice
-minimumLiquidity
-maxAgeSeconds
-approvedPool
-approvedAsset
-approvedQuote
-requiredEventSignature
-```
-
-### Decision
-
-```text
-status           PASS | REJECT
-reasons[]        machine-readable codes
-observationId
-policyVersion
-verifiedTxKey
-```
-
-## Official Attestcoin flow VINCE must follow
-
-From Attestcoin SDK documentation:
+## Official Attestcoin flow VINCE follows
 
 1. Query supported chains via `PrecompileChainInfoProvider`.
 2. Resolve `chainKey`. This is not EVM `chainId`.
-3. Load the source transaction and its block number.
+3. Load the **pasted** source transaction and its block number.
 4. `waitUntilHeightAttested(chainKey, blockNumber)`.
 5. `ProofBuilder.getProof(txHash)`.
-6. `PrecompileBlockProver.verifySingle(...)` or the contract equivalent `verify` / `verifyAndEmit`.
-7. Decode verified transaction bytes.
-8. Require receipt status success.
+6. Worker: `PrecompileBlockProver.verifySingle(...)`.
+7. User: `VinceGate` → `VinceVerifier.verifyAndEmit` at `0x0FD2`.
+8. Decode verified transaction bytes. Require receipt status success.
 9. Apply VINCE policy.
 
 ```mermaid
@@ -173,46 +111,48 @@ sequenceDiagram
   participant User
   participant UI as Next.js UI
   participant W as Evidence worker
-  participant Base as Source chain
+  participant Eth as Ethereum
   participant PB as Proof Builder
-  participant ASC as VINCE ASC
   participant PRE as Block Prover 0x0FD2
-  participant ENG as Decision engine
+  participant GATE as VinceGate
+  participant ENG as VinceEngine
+  participant DESK as VinceDesk
 
-  User->>UI: Verify market condition
-  UI->>W: Request evidence for asset/policy
-  W->>Base: Find eligible transaction
-  Base-->>W: tx hash, block
+  User->>UI: Paste feed-update hash
+  UI->>W: POST /api/observe
+  W->>Eth: getTransaction / receipt
   W->>PB: waitUntilHeightAttested
   PB-->>W: attested
   W->>PB: getProof(txHash)
   PB-->>W: merkle + continuity + txBytes
-  W->>ASC: submit evidence
-  ASC->>PRE: verifyAndEmit
-  PRE-->>ASC: verified
-  ASC->>ENG: normalize + policy
+  W->>PRE: verifySingle (view)
+  PRE-->>W: true or fail closed
+  W-->>UI: two verdicts (preview)
+  User->>UI: Submit on Creditcoin
+  UI->>GATE: submitSourceTransaction
+  GATE->>PRE: verifyAndEmit
+  PRE-->>GATE: verified
+  GATE->>ENG: evaluate
   ENG-->>UI: PASS or REJECT
-  UI-->>User: Continue or stop
+  alt PASS window live
+    User->>DESK: releaseFinancing
+  end
 ```
 
 ## Combined vs separated contracts
 
 Attestcoin documents two patterns:
 
-- **Combined:** verification and business logic in one contract. Fine for a tiny gate demo.
-- **Separated:** ASC verifies, then calls business logic. Recommended for VINCE because the vault must not own verification.
+- **Combined:** verification and business logic in one contract.
+- **Separated:** ASC verifies, then calls business logic.
 
-VINCE chooses separated. See [contracts/architecture.md](./contracts/architecture.md).
+VINCE uses **separated**: `VinceVerifier` ≠ `VinceEngine` ≠ `VinceDesk`. See [contracts/architecture.md](./contracts/architecture.md).
 
-## What VINCE will not put on Base
+## What VINCE will not put on Base (MVP)
 
-Attestcoin's default dApp pattern is: deploy a minimal source-chain contract that emits a custom event.
+VINCE does not modify B20 tokens. MVP does not observe Base at all. Ethereum Chainlink `AnswerUpdated` is the MVP observation class ([ADR-003](./decisions/ADR-003-price-observation-model.md), [ADR-006](./decisions/ADR-006-observation-event-model.md)).
 
-VINCE cannot do that for the asset itself. B20 tokenized stocks are issuer-controlled precompiles. We do not modify them.
-
-Therefore VINCE observes **existing** market contracts (approved DEX), or it deploys an optional VINCE helper on Base later — only with an ADR.
-
-This tension is [ADR-006](./decisions/ADR-006-observation-event-model.md).
+Base TSLAc remains a later listing after Attestcoin lists Base.
 
 ## Environments
 
@@ -223,14 +163,17 @@ Creditcoin (official endpoints):
 | Mainnet | 102030 | `https://mainnet3.creditcoin.network` | https://creditcoin.blockscout.com/ |
 | Testnet | 102031 | `https://rpc.cc3-testnet.creditcoin.network` | https://creditcoin-testnet.blockscout.com/ |
 
-Attestcoin precompiles (both networks, from Attestcoin environment docs):
+Attestcoin precompiles (from Attestcoin environment docs):
 
 | Precompile | Address |
 | --- | --- |
 | Block Prover | `0x0000000000000000000000000000000000000FD2` |
 | ChainInfo | `0x0000000000000000000000000000000000000FD3` |
 
-Proof Builder URLs in official docs currently disagree between pages. Record the working URL during Phase 2. See [references/open-questions.md](./references/open-questions.md).
+Working Proof Builder (Phase 2): `https://prover.cc3-testnet.creditcoin.network`.  
+CC3 Testnet decoder: `0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f`.
+
+Live VINCE app addresses: [README.md](../README.md) and [`contracts/deployments/creditcoin-testnet.json`](../contracts/deployments/creditcoin-testnet.json).
 
 ## Related
 

@@ -36,6 +36,8 @@ export type ListedMarket = {
   minimumPrice?: string;
   sourceChainKey?: number;
   maxAgeSeconds?: number;
+  liveRpcHuman?: string | null;
+  liveRpcUpdatedAt?: number | null;
 };
 
 export type GateResult = {

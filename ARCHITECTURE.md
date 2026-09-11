@@ -1,58 +1,63 @@
 # VINCE Architecture
 
-Status: Draft  
-Audience: protocol engineers, reviewers, coding agents
+Status: Live on Creditcoin Testnet (ADR-014)  
+Audience: protocol engineers, reviewers, coding agents, hackathon judges
 
 This document is the system map. Detailed subsystem specs live under `docs/`. Open decisions live in `DECISIONS.md`.
 
 ## One sentence
 
-VINCE is a cross-chain collateral and trading gate that uses verifiable source-chain tokenized-stock market activity to make deterministic financial decisions on Creditcoin, without trusting a centralized price-reporting API.
+VINCE is a verified market gate: a user pastes an Ethereum feed-update, Attestcoin proves inclusion on Creditcoin, VINCE scores that **listed** market’s rule, and a Creditcoin desk may act only after `PASS`. Proof ≠ PASS.
 
 ## Four layers
 
 VINCE is not one contract. It is four layers with different trust properties.
 
 ```text
-1. MARKET LAYER        Base tokenized stocks + DEX
-2. VERIFICATION LAYER  Attestcoin proves source-chain transactions
+1. MARKET LAYER        Ethereum Chainlink feed-updates (MVP). Base B20 later.
+2. VERIFICATION LAYER  Attestcoin proves source-chain transaction inclusion
 3. DECISION LAYER      VINCE interprets the verified observation
-4. SETTLEMENT LAYER    Creditcoin smart contracts enforce the decision
+4. SETTLEMENT LAYER    Creditcoin contracts enforce the decision
 ```
 
 ```mermaid
 flowchart TB
-  subgraph MARKET["1. Market layer — Base"]
-    B20["B20 tokenized stocks<br/>TSLAc / AAPLc / NVDAc / ..."]
-    DEX["Approved DEX venue<br/>e.g. TSLAc / USDC"]
-    B20 --- DEX
+  subgraph MARKET["1. Market layer — Ethereum (MVP)"]
+    CL["Chainlink USD feed-update<br/>AnswerUpdated · 8 decimals"]
+    USER["User pastes the tx hash"]
+    USER --> CL
   end
 
   subgraph VERIFY["2. Verification layer — Attestcoin"]
     ATT["Attestor consensus"]
     PB["ProofBuilder<br/>Merkle + continuity"]
-    PRE["Block Prover precompile<br/>0x0FD2 on Creditcoin"]
+    PRE["Block Prover 0x0FD2<br/>verifySingle then verifyAndEmit"]
     ATT --> PB --> PRE
   end
 
   subgraph DECIDE["3. Decision layer — VINCE"]
     NORM["Normalize observation"]
-    POL["Policy engine"]
+    POL["VinceRegistry policy"]
     OUT["PASS or REJECT"]
     NORM --> POL --> OUT
   end
 
-  subgraph SETTLE["4. Settlement layer — Creditcoin"]
-    GATE["Verified Market Gate"]
-    VAULT["Collateral Vault"]
-    GATE --> VAULT
+  subgraph SETTLE["4. Settlement layer — Creditcoin Testnet"]
+    GATE["VinceGate"]
+    ENG["VinceEngine · 30-minute window"]
+    DESK["VinceDesk · release financing"]
+    GATE --> ENG --> DESK
   end
 
-  DEX -->|"source transaction"| VERIFY
+  CL -->|"pasted source tx"| VERIFY
   PRE -->|"verified tx bytes"| DECIDE
   OUT -->|"allow / reject"| SETTLE
-  SETTLE -->|"user-visible result"| USER["User"]
+  SETTLE -->|"user-visible result"| HUMAN["User"]
 ```
+
+Base tokenized stocks (TSLAc, …) are a **later** market layer, only after `getSupportedChains()` lists Base ([ADR-005](./docs/decisions/ADR-005-source-chain-feasibility.md)). Never label an Ethereum proof as TSLAc.
+
+The vault is lab-only ([ADR-013](./docs/decisions/ADR-013-gate-is-the-product.md)). It may deploy. It is not the product.
 
 ## Core law
 
@@ -62,14 +67,14 @@ No financial action on Creditcoin may depend solely on an off-chain assertion ab
 
 | Layer | May claim | May not claim |
 | --- | --- | --- |
-| Market | A swap, mint, or transfer happened in a Base contract | That VINCE should lend, unlock, or liquidate |
-| Verification | This transaction was included in an attested source-chain block | That TSLAc is worth `$250`, or that policy passed |
+| Market | A Chainlink `AnswerUpdated` happened on Ethereum | That VINCE should PASS, or that TSLAc traded |
+| Verification | This transaction was included in an attested source-chain block | That the print is the listed market, or that policy passed |
 | Decision | The verified observation satisfies or fails VINCE rules | That the proof is valid if the precompile did not say so |
-| Settlement | Execute `ALLOW`, `REJECT`, `LOCK`, `UNLOCK`, `BORROW`, `LIQUIDATE` | Trust a backend JSON payload as market truth |
+| Settlement | Execute `PASS` window / `REJECT` / desk `releaseFinancing` | Trust a backend JSON payload or `eth_call` as market truth |
 
 ## Decision pipeline
 
-Do not collapse this pipeline into the vault.
+Do not collapse this pipeline into the desk.
 
 ```text
 OBSERVATION
@@ -87,28 +92,29 @@ EXECUTION
 
 ```mermaid
 flowchart LR
-  O["Observation<br/>chain, block, tx,<br/>contract, event, amounts"] --> V["Verification<br/>Merkle + continuity"]
-  V --> N["Normalization<br/>asset, market,<br/>price, timestamp"]
-  N --> P["Policy<br/>threshold, liquidity,<br/>freshness, registry"]
+  O["Observation<br/>user-pasted tx,<br/>receipt, AnswerUpdated"] --> V["Verification<br/>Merkle + continuity"]
+  V --> N["Normalization<br/>emitter, answer,<br/>updatedAt"]
+  N --> P["Policy<br/>listed feed, floor,<br/>freshness"]
   P --> D["Decision<br/>PASS / REJECT"]
-  D --> E["Execution<br/>gate / vault action"]
+  D --> E["Execution<br/>gate window / desk"]
 ```
 
 | Stage | Input | Output | Owner |
 | --- | --- | --- | --- |
-| Observation | Base logs, receipts, pool state | Raw evidence package | Evidence worker |
-| Verification | Encoded tx + Merkle proof + continuity proof | Boolean inclusion + verified tx bytes | Attestcoin precompile |
-| Normalization | Verified tx bytes | Canonical `MarketObservation` | VINCE contracts |
-| Policy | Observation + registry config | Rule results | VINCE policy engine |
-| Decision | Rule results | `PASS` or `REJECT` plus reason codes | VINCE decision engine |
-| Execution | Decision + requested action | State change or revert | Gate / vault |
+| Observation | Pasted Ethereum tx | Raw evidence package | Evidence worker (`POST /api/observe`) |
+| Verification (view) | Encoded tx + Merkle + continuity | `verifySingle` boolean | Attestcoin `0x0FD2` (no CTC) |
+| Verification (settlement) | Same proofs | `verifyAndEmit` + receipt `0x1` | `VinceVerifier` on Creditcoin (CTC) |
+| Normalization | Verified tx bytes | Canonical observation (emitter, answer, `updatedAt`) | `VinceEngine` |
+| Policy | Observation + `VinceRegistry` | Rule results | `VinceEngine` |
+| Decision | Rule results | `PASS` or `REJECT` plus reason codes | `VinceEngine` |
+| Execution | Live PASS window | `VinceDesk.releaseFinancing` | Desk |
 
 ## Trust boundary
 
 ```mermaid
 flowchart TB
   subgraph UNTRUSTED["Untrusted until proven"]
-    RPC["Base RPC / indexer"]
+    RPC["Ethereum RPC"]
     API["VINCE API"]
     UI["Next.js UI"]
     WORKER["Evidence worker"]
@@ -119,47 +125,50 @@ flowchart TB
     PRECOMP["Creditcoin Block Prover 0x0FD2"]
   end
 
-  subgraph TRUSTED_VINCE["VINCE on Creditcoin"]
-    REG["Market registry"]
-    ENG["Decision engine"]
-    SET["Gate and vault"]
+  subgraph TRUSTED_VINCE["VINCE on Creditcoin Testnet"]
+    VER["VinceVerifier"]
+    REG["VinceRegistry"]
+    ENG["VinceEngine"]
+    GATE["VinceGate"]
+    DESK["VinceDesk"]
   end
 
   RPC --> WORKER --> API --> UI
-  WORKER -->|"proofs + encoded tx"| ENG
-  ENG --> PRECOMP
-  PRECOMP -->|"verified or revert"| ENG
+  WORKER -->|"proofs + encoded tx"| UI
+  UI -->|"submitSourceTransaction"| GATE
+  GATE --> VER
+  VER --> PRECOMP
+  PRECOMP -->|"verified or revert"| VER
   ATTEST -->|"attestations"| PRECOMP
-  ENG --> REG
-  ENG --> SET
+  VER --> ENG
+  REG --> ENG
+  ENG --> DESK
 ```
 
-The worker, API, and UI may **prepare** evidence. They may not **authorize** a financial action.
+The worker, API, and UI may **prepare** evidence. They may not **authorize** a financial action. Submit is disabled unless `verifySingle === true`. On-chain submit still re-checks `0x0FD2`.
 
-## Intended MVP: Verified Market Gate
-
-Do not start with a lending protocol.
+## Live MVP: Verified Market Gate + desk
 
 ```text
-User selects TSLAc
+User copies an Ethereum Chainlink feed-update hash
         ↓
-Market condition: TSLAc ≥ $250
+Pastes it on /gate  (wallet not required yet)
         ↓
-Find eligible Base transaction
+Worker: waitUntilHeightAttested → getProof → verifySingle
         ↓
-Wait for source-block attestation
+Two verdicts: proof verified  ·  listed rule met or not
         ↓
-Generate Merkle + continuity proof
+Connect Creditcoin → VinceGate.submitSourceTransaction
         ↓
-Verify on Creditcoin
+VinceVerifier.verifyAndEmit at 0x0FD2
         ↓
-Normalize and evaluate policy
+VinceEngine: listed emitter · floor · freshness
         ↓
-PASS → Continue
-REJECT → Stop, with reason
+PASS → 30-minute window → /desk may release financing
+REJECT → desk stays locked
 ```
 
-The vault is Phase 6. It reuses the same decision engine. See [docs/04-DEVELOPMENT-SEQUENCE.md](./docs/04-DEVELOPMENT-SEQUENCE.md).
+Unlisted emitter → `REJECT_FEED`. Paste does not write the registry. Live registry **starts empty**. Owner lists a sourced aggregator on `/markets`.
 
 ## Project hierarchy
 
@@ -167,31 +176,31 @@ The vault is Phase 6. It reuses the same decision engine. See [docs/04-DEVELOPME
 VINCE
 │
 ├── SOURCE
-│   └── Base
-│       ├── Tokenized Stocks (B20, issuer-controlled)
-│       └── DEX (approved venue — OPEN)
+│   └── Ethereum Mainnet (CC3 Testnet chainKey 3)
+│       └── Chainlink USD feed-update (AnswerUpdated)
+│   └── Base B20 — later, not MVP
 │
 ├── PROOF
 │   └── Attestcoin readability
 │       ├── Attestors
-│       ├── ProofBuilder
-│       └── Block Prover precompile
+│       ├── ProofBuilder  https://prover.cc3-testnet.creditcoin.network
+│       └── Block Prover 0x0FD2
 │
 ├── DECISION
-│   ├── Market Registry
-│   ├── Observation Engine
-│   ├── Policy Engine
-│   └── Risk Rules
+│   ├── VinceRegistry
+│   ├── VinceEngine
+│   └── Risk rules (per listing)
 │
 ├── SETTLEMENT
-│   └── Creditcoin
-│       ├── Verified Market Gate
-│       └── Vault (after the gate works)
+│   └── Creditcoin Testnet 102031
+│       ├── VinceVerifier
+│       ├── VinceGate
+│       ├── VinceDesk
+│       └── VinceVault (lab only, not in UI)
 │
 ├── APPLICATION
-│   ├── Evidence worker
-│   ├── API
-│   └── Next.js UI
+│   ├── Evidence worker  POST /api/observe
+│   └── Next.js UI  /gate /desk /markets /activity
 │
 └── ENGINEERING
     ├── ADRs
@@ -201,53 +210,49 @@ VINCE
     └── Agent rules
 ```
 
-## Documented facts vs open design
+## Documented facts vs later markets
 
-Architecture must not invent capabilities. These are currently **facts from official docs**:
+Architecture must not invent capabilities. These are **facts**:
 
-- Coinbase tokenized stocks on Base are B20 tokens, identified by address, not ticker.
-- TSLAc address: `0xb2000000000000000000001e800a7f5189430cD0`.
-- Base Chainlink equity feeds report traditional-market total-return values. They are **not** DEX prices.
-- Attestcoin readability proves transaction inclusion with a Merkle proof and a continuity proof.
-- Creditcoin verifies those proofs at precompile `0x0000000000000000000000000000000000000FD2`.
-- The precompile does **not** prove the transaction succeeded. VINCE must check receipt status `0x1`.
-- Official Attestcoin environment tables currently list Ethereum Mainnet and Ethereum Sepolia as supported source chains.
-
-Closed models:
-
-1. **MVP source:** Ethereum (CC3 Testnet `chainKey` 3 for Ethereum Mainnet, `1` for Sepolia smoke). Base TSLAc is later, never faked ([ADR-005](./docs/decisions/ADR-005-source-chain-feasibility.md)).
-2. **Price:** Chainlink feed-update, 8 decimals, user **pastes** the tx ([ADR-003](./docs/decisions/ADR-003-price-observation-model.md), [ADR-010](./docs/decisions/ADR-010-user-pastes-tx.md)).
-3. **Vault:** 30-minute PASS window, 50% LTV, mock vUSD ([ADR-004](./docs/decisions/ADR-004-vault-decision-model.md)).
+- MVP source is Ethereum. CC3 Testnet `getSupportedChains()`: Ethereum `chainKey` 3 / `chainId` 1; Sepolia `chainKey` 1 / `chainId` 11155111. Base is absent.
+- Working Proof Builder: `https://prover.cc3-testnet.creditcoin.network`.
+- Attestcoin readability proves inclusion with a Merkle proof and a continuity proof at `0x0000000000000000000000000000000000000FD2`.
+- The precompile does **not** prove success. VINCE requires receipt status `0x1`.
+- MVP price is a registered Chainlink feed-update, 8 decimals. Identity is the log emitter, never the ticker.
+- User **pastes** the source tx ([ADR-010](./docs/decisions/ADR-010-user-pastes-tx.md)). Worker must not swap the hash.
+- Live settlement is Creditcoin Testnet ([ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md)). Sepolia does not host `0x0FD2`.
+- Product is the gate + desk ([ADR-013](./docs/decisions/ADR-013-gate-is-the-product.md)).
 
 Still blank until sourced:
 
-- Proof Builder URL that works
-- Ethereum TSLA/USD proxy + aggregator + event from Chainlink
-- Empirical `getSupportedChains()` dump
+- Ethereum TSLA/USD aggregator (do not invent it)
+- Base `chainKey` (do not fake it)
+
+Sourced, **not listed** unless the owner calls `listMarket`: BAT/USD aggregator `0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc` ([docs/protocol/market-registry.md](./docs/protocol/market-registry.md)).
 
 ## Application surface
-
-The protocol is chain logic. The product is a simple gate.
 
 | Concern | Choice | Detail |
 | --- | --- | --- |
 | Web app | Next.js + TypeScript + Tailwind | [docs/application/frontend.md](./docs/application/frontend.md) |
 | Type | Inter + Poppins | Body / display |
 | Color | Black + blue | No decorative palettes |
-| Contracts | Solidity + Hardhat | [docs/integration/creditcoin.md](./docs/integration/creditcoin.md) |
+| Wallet | Injected `window.ethereum` | Creditcoin Testnet, CTC |
+| Contracts | Solidity + Hardhat | Live addresses in [README.md](./README.md) |
 | Proofs | `@gluwa/usc-sdk` | `ProofBuilder`, `PrecompileChainInfoProvider`, `PrecompileBlockProver` |
 
 Users should see:
 
 ```text
 Paste tx           0x…
-TSLA/USD           Ethereum
-Official feed      $263.40
-Required           ≥ $250
+Matched market     from the feed, after decode
+Official feed      proven AnswerUpdated
+Required           that listing’s floor  (or “not listed”)
 ✓ Verified on Ethereum
 ✓ Cross-chain proof verified
-✓ Market condition satisfied
-[Continue]
+✓ Market condition satisfied   or REJECT_*
+[ Submit on Creditcoin ]
+[ Open the desk ]
 ```
 
 They should not have to understand Merkle trees. Cryptographic detail belongs in an advanced panel.
@@ -259,3 +264,4 @@ They should not have to understand Merkle trees. Cryptographic detail belongs in
 - Expanded architecture: [docs/02-SYSTEM-ARCHITECTURE.md](./docs/02-SYSTEM-ARCHITECTURE.md)
 - Parties: [docs/03-ECOSYSTEM.md](./docs/03-ECOSYSTEM.md)
 - Threats: [THREAT-MODEL.md](./THREAT-MODEL.md)
+- Live contracts: [README.md](./README.md)

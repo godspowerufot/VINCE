@@ -1,6 +1,6 @@
 # ADR-012 — Sepolia policy lab; Attestcoin stays a Creditcoin view
 
-Status: **Accepted**  
+Status: **Superseded** by [ADR-014](./ADR-014-creditcoin-settlement.md)  
 Date: 2026-09-10
 
 Directed by the product owner: do not require Creditcoin gas, a CTC faucet, or Creditcoin wallets for the hackathon path. Attestation remains the important layer. Policy, vault, and borrow run on Ethereum Sepolia.

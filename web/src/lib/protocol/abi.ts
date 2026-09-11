@@ -1,5 +1,5 @@
 export const GATE_ABI = [
-  "function submitAttestedFeedUpdate(bytes32 sourceTxHash,uint64 chainKey,address emitter,int256 answer,uint256 updatedAt,bytes32 merkleRoot,bytes32 continuityDigest) returns (uint8 decision,string[] reasons)",
+  "function submitSourceTransaction(tuple(uint64 chainKey,uint64 blockHeight,bytes encodedTransaction,tuple(bytes32 root,tuple(bytes32 hash,bool isLeft)[] siblings) merkleProof,tuple(bytes32 lowerEndpointDigest,bytes32[] roots) continuityProof) proof) returns (uint8 decision,string[] reasons)",
   "function inWindow() view returns (bool)",
 ] as const;
 
@@ -21,26 +21,8 @@ export const REGISTRY_ABI = [
   "function setMinimumPrice(string id,int256 minimumPrice)",
 ] as const;
 
-export const VAULT_ABI = [
-  "function vusd() view returns (address)",
+export const DESK_ABI = [
   "function engine() view returns (address)",
-  "function collateral(address) view returns (uint256)",
-  "function debt(address) view returns (uint256)",
-  "function inWindow() view returns (bool)",
-  "function borrowLimitOf(address) view returns (uint256)",
-  "function deposit(uint256 amount)",
-  "function withdraw(uint256 amount)",
-  "function requestBorrow(uint256 amount)",
-  "function repay(uint256 amount)",
-  "event VaultActionExecuted(address indexed user,string action,uint256 amount,uint256 collateralAfter,uint256 debtAfter,uint256 borrowLimit)",
-] as const;
-
-export const VUSD_ABI = [
-  "function faucet()",
-  "function claimed(address) view returns (bool)",
-  "function balanceOf(address) view returns (uint256)",
-  "function allowance(address,address) view returns (uint256)",
-  "function approve(address,uint256) returns (bool)",
-  "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
+  "function releaseFinancing()",
+  "event FinancingReleased(address indexed desk,bytes32 indexed txKey,address emitter,int256 answer,uint256 validUntil)",
 ] as const;

@@ -3,15 +3,15 @@
 Status: Draft  
 Related: [docs/contracts/security-model.md](./docs/contracts/security-model.md), [docs/testing/adversarial-cases.md](./docs/testing/adversarial-cases.md)
 
-VINCE's value is that Creditcoin does not take a backend's word for a Base market fact. The threat model is written against that claim.
+VINCE's value is that Creditcoin does not take a backend's word for a source-chain market fact. The threat model is written against that claim.
 
 ## Assets
 
 | Asset | Why it matters |
 | --- | --- |
-| Gate decision | Incorrect `PASS` unlocks a financial path |
-| Vault funds | Incorrect borrow, unlock, or liquidation moves value |
-| Market registry | Wrong asset or pool becomes protocol truth |
+| Gate decision | Incorrect `PASS` unlocks the desk |
+| Desk action | `releaseFinancing` without a live PASS |
+| Market registry | Wrong emitter becomes protocol truth |
 | Observation freshness | Stale evidence can satisfy a condition that is no longer true |
 | Proof verification path | Bypassing it collapses the whole design |
 
@@ -20,7 +20,7 @@ VINCE's value is that Creditcoin does not take a backend's word for a Base marke
 | Actor | Capability | Trust |
 | --- | --- | --- |
 | User | Submits actions, may choose which tx to present | Untrusted |
-| Attacker | Can transact on Base, call VINCE contracts, lie to the API | Untrusted |
+| Attacker | Can transact on Ethereum, call VINCE contracts, lie to the API | Untrusted |
 | Evidence worker / API | Finds txs, builds proofs, can omit or delay | Untrusted for truth; trusted only for liveness/UX |
 | Tokenized-stock issuer | Controls B20 parameters, pauses, policies, multipliers | External; not VINCE-controlled |
 | DEX | Provides the market VINCE observes | External; selected by registry |

@@ -9,14 +9,8 @@
   "verifier": null,
   "engine": "0x22795a74eFAD58c2E7D7160E3254Ce814380094E",
   "gate": "0x22795a74eFAD58c2E7D7160E3254Ce814380094E",
+  "desk": "0x400c149d51345738131Ee622319A3A8CaD15D619",
   "vault": "0x51Ce2eEb608067E3Ecff94BEcaB4B2449e66B7Fe",
   "vusd": "0xE40049B2907F5e3a64892cEB87E46D0bd04b6cE9",
-  "seed": {
-    "id": "eth-bat-usd",
-    "displayName": "BAT/USD",
-    "feedAggregator": "0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc",
-    "minimumPrice": "5000000",
-    "maxAgeSeconds": 604800,
-    "source": "ADR-012 Sepolia policy lab"
-  }
+  "deskDeployedAt": "2026-09-11T12:31:13.779Z"
 }

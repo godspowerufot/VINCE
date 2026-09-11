@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { AppShell, Split } from "@/components/AppShell";
-import { seedMarkets } from "@/lib/protocol/markets";
+import { readMarkets, readWindow } from "@/lib/protocol/settlementRead";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const listed = await readMarkets();
+  const windowState = await readWindow();
+
   return (
     <AppShell active="home">
       <Split
@@ -12,8 +15,8 @@ export default function LandingPage() {
               Paste a real Ethereum market print.
             </h1>
             <p className="mt-6 text-[17px] leading-7 text-mute">
-              Creditcoin verifies it happened. VINCE decides on Sepolia if that
-              listed market’s rule passed. Proof and PASS are different.
+              Creditcoin verifies it happened. VINCE decides whether that listed
+              market’s rule passed. A Creditcoin desk may act only after PASS.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
@@ -23,10 +26,10 @@ export default function LandingPage() {
                 Open the gate
               </Link>
               <Link
-                href="/vault"
+                href="/desk"
                 className="text-[14px] text-mute transition-colors duration-200 hover:text-ink"
               >
-                Open the vault
+                Open the desk
               </Link>
             </div>
             <p className="mt-auto hidden pt-16 text-[12px] text-mute lg:block">
@@ -47,34 +50,64 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <span className="block text-ink">Paste it on the gate</span>
-                  We prove inclusion on Creditcoin. Wallet is later.
+                  Attestcoin proves inclusion. Wallet is later.
                 </li>
                 <li>
-                  <span className="block text-ink">Read two results</span>
-                  Proof verified. Then whether that listed market’s rule passed.
+                  <span className="block text-ink">Unlock the desk</span>
+                  A Creditcoin RWA desk may release financing only after PASS.
                 </li>
               </ol>
             </div>
             <div>
               <h2 className="font-display text-[18px] font-medium tracking-[-0.02em]">
-                Listed now
+                Listed on-chain
               </h2>
-              <ul className="mt-5 space-y-3 text-[15px]">
-                {seedMarkets().map((market) => (
-                  <li
-                    key={market.id}
-                    className="flex items-baseline justify-between gap-6"
-                  >
-                    <span>{market.display}</span>
-                    <span className="text-mute">
-                      {market.ready ? market.floor : market.note}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {listed.markets.length === 0 ? (
+                <p className="mt-5 text-[15px] leading-6 text-mute">
+                  {listed.error ?? "No markets listed. Owner must list an aggregator. Paste does not add a row."}
+                </p>
+              ) : (
+                <ul className="mt-5 space-y-4 text-[15px]">
+                  {listed.markets.map((market) => {
+                    const attested =
+                      windowState.window?.emitter?.toLowerCase() ===
+                      market.feedAggregator?.toLowerCase()
+                        ? windowState.window.observedHuman
+                        : null;
+                    return (
+                      <li key={market.id}>
+                        <div className="flex items-baseline justify-between gap-6">
+                          <span>{market.display}</span>
+                          <span className="text-mute">{market.floor}</span>
+                        </div>
+                        <p className="mt-1 text-[13px] text-mute">
+                          {market.liveRpcHuman ? (
+                            <>
+                              RPC latest{" "}
+                              <span className="tabular-nums text-ink">
+                                {market.liveRpcHuman}
+                              </span>{" "}
+                              · not attested
+                            </>
+                          ) : (
+                            "RPC latest unavailable"
+                          )}
+                          {attested ? (
+                            <>
+                              {" "}
+                              · attested{" "}
+                              <span className="tabular-nums text-ink">{attested}</span>
+                            </>
+                          ) : null}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               <p className="mt-6 text-[13px] leading-6 text-mute">
-                GOOGL and SPCX can be proved. Pasting does not list them. After
-                PASS, supply and borrow mock vUSD on the vault.
+                RPC latest is an Ethereum read. It cannot PASS. Only a proven
+                feed-update can.
               </p>
             </div>
           </div>

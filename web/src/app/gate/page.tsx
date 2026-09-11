@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/AppShell";
-import { seedMarkets } from "@/lib/protocol/markets";
 import { GateClient } from "./GateClient";
 
 export default async function GatePage({
@@ -10,11 +9,7 @@ export default async function GatePage({
   const params = await searchParams;
   return (
     <AppShell active="gate">
-      <GateClient
-        key={params.tx ?? "empty"}
-        initialTx={params.tx}
-        markets={seedMarkets()}
-      />
+      <GateClient key={params.tx ?? "empty"} initialTx={params.tx} markets={[]} />
     </AppShell>
   );
 }

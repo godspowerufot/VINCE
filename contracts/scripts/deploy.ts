@@ -4,7 +4,6 @@ import path from "path";
 
 const CC3_TESTNET_PROVER = "0x0000000000000000000000000000000000000FD2";
 const CC3_TESTNET_DECODER = "0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f";
-const BAT_AGGREGATOR = "0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -55,26 +54,17 @@ async function main() {
   const Gate = await ethers.getContractFactory("VinceGate");
   const gate = await Gate.deploy(await verifier.getAddress(), await engine.getAddress());
   await gate.waitForDeployment();
-
   await (await engine.setGate(await gate.getAddress())).wait();
+
+  const Desk = await ethers.getContractFactory("VinceDesk");
+  const desk = await Desk.deploy(await engine.getAddress());
+  await desk.waitForDeployment();
 
   const Vault = await ethers.getContractFactory("VinceVault");
   const vault = await Vault.deploy(await engine.getAddress(), await vusd.getAddress());
   await vault.waitForDeployment();
 
   await (await vusd.mint(await vault.getAddress(), ethers.parseEther("1000000"))).wait();
-
-  await (
-    await registry.listMarket(
-      "eth-bat-usd",
-      3,
-      1,
-      BAT_AGGREGATOR,
-      5_000_000,
-      3600,
-      "BAT/USD",
-    )
-  ).wait();
 
   const addresses = {
     network: network.name,
@@ -87,15 +77,9 @@ async function main() {
     verifier: await verifier.getAddress(),
     engine: await engine.getAddress(),
     gate: await gate.getAddress(),
+    desk: await desk.getAddress(),
     vault: await vault.getAddress(),
     vusd: await vusd.getAddress(),
-    seed: {
-      id: "eth-bat-usd",
-      displayName: "BAT/USD",
-      feedAggregator: BAT_AGGREGATOR,
-      minimumPrice: "5000000",
-      source: "docs/protocol/market-registry.md",
-    },
   };
 
   console.log(JSON.stringify(addresses, null, 2));
@@ -108,6 +92,10 @@ async function main() {
   );
 
   if (addresses.chainId === 102031) {
+    writeFileSync(
+      path.join(outDir, "creditcoin-testnet.json"),
+      `${JSON.stringify(addresses, null, 2)}\n`,
+    );
     const webDir = path.join(__dirname, "..", "..", "web", "src", "lib");
     mkdirSync(webDir, { recursive: true });
     writeFileSync(
@@ -121,6 +109,7 @@ async function main() {
       "VinceVerifier",
       "VinceEngine",
       "VinceGate",
+      "VinceDesk",
       "VinceVault",
       "MockVUSD",
     ]) {

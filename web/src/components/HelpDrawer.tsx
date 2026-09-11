@@ -21,7 +21,7 @@ export function HelpDrawer() {
             VINCE does not pick a print for you. You point at one.
           </p>
           <ol className="list-decimal space-y-2 pl-5">
-            <li>Open a listed feed on Ethereum. Today that is BAT/USD.</li>
+            <li>Open an Ethereum Chainlink feed-update. Only owner-listed aggregators can PASS.</li>
             <li>Open a recent update on the block explorer.</li>
             <li>Copy the transaction hash — 64 hex characters after 0x.</li>
             <li>Return here and paste it.</li>

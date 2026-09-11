@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { shortenHash } from "@/lib/hash";
 import type { GateResult } from "@/lib/protocol/types";
-import { SEPOLIA } from "@/lib/protocol/constants";
+import { SETTLEMENT } from "@/lib/protocol/constants";
 
 export function AdvancedPanel({ result }: { result: GateResult }) {
   const [open, setOpen] = useState(false);
@@ -43,11 +43,11 @@ export function AdvancedPanel({ result }: { result: GateResult }) {
           />
           {result.settlementTx ? (
             <Row
-              label="Sepolia tx"
-              value={`${SEPOLIA.explorer}/tx/${result.settlementTx}`}
+              label="Creditcoin tx"
+              value={`${SETTLEMENT.explorer}/tx/${result.settlementTx}`}
             />
           ) : (
-            <Row label="Sepolia tx" value="not submitted" />
+            <Row label="Creditcoin tx" value="not submitted" />
           )}
         </dl>
       ) : null}

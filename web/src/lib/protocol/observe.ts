@@ -5,7 +5,8 @@ import {
   ATTESTCOIN,
   ETHEREUM,
 } from "./constants";
-import { floorLabel, formatUsd8, matchSeed } from "./markets";
+import { floorLabel, formatUsd8, matchListed } from "./markets";
+import { readMarkets } from "./settlementRead";
 import type { ContinuityProofView, MerkleProofView, ObserveEvent, ObserveResult, PolicyReason } from "./types";
 
 const AGG_ABI = [
@@ -200,7 +201,8 @@ export async function observeSourceTx(
     }
   }
 
-  const listed = emitter ? matchSeed(emitter) : null;
+  const { markets } = await readMarkets();
+  const listed = emitter ? matchListed(markets, emitter) : null;
   const statusOk = receipt.status === 1;
   const reasons: PolicyReason[] = [];
   if (!statusOk) reasons.push("REJECT_STATUS");
@@ -209,17 +211,19 @@ export async function observeSourceTx(
   if (listed && Number(match.chainKey) !== listed.sourceChainKey) {
     reasons.push("REJECT_SOURCE_CHAIN");
   }
-  if (listed && answer != null && answer < BigInt(listed.minimumPrice)) {
+  if (listed && answer != null && listed.minimumPrice && answer < BigInt(listed.minimumPrice)) {
     reasons.push("REJECT_THRESHOLD");
   }
   const age = Math.floor(Date.now() / 1000) - updatedAt;
-  if (listed && (updatedAt === 0 || age > listed.maxAgeSeconds)) {
+  if (listed && listed.maxAgeSeconds != null && (updatedAt === 0 || age > listed.maxAgeSeconds)) {
     reasons.push("REJECT_STALE");
   }
 
   const pass = reasons.length === 0 && Boolean(listed);
   const observedHuman = answer != null ? formatUsd8(answer) : null;
-  const requiredHuman = listed ? floorLabel(BigInt(listed.minimumPrice)) : null;
+  const requiredHuman = listed?.minimumPrice
+    ? floorLabel(BigInt(listed.minimumPrice))
+    : null;
 
   let conditionLabel = "Market condition satisfied";
   if (!statusOk) conditionLabel = "Source transaction failed";
@@ -231,7 +235,7 @@ export async function observeSourceTx(
 
   const result: ObserveResult = {
     tx: txHash,
-    market: listed?.displayName ?? description,
+    market: listed?.display ?? description,
     listed: Boolean(listed),
     observedHuman,
     requiredHuman,
@@ -258,7 +262,7 @@ export async function observeSourceTx(
     advanced: {
       sourceChain,
       chainKey: `${chainKey} (CC3 Testnet)`,
-      feed: listed?.displayName ?? description,
+      feed: listed?.display ?? description,
       emitter: emitter || "—",
       block: String(tx.blockNumber),
       observedAt: updatedAt ? new Date(updatedAt * 1000).toISOString() : "—",

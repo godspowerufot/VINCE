@@ -16,7 +16,6 @@ Every failure the user can see must map to a protocol stage. Do not use a single
 | This feed is frozen | Policy | Paused / non-advancing round |
 | Verification unavailable | Fail closed | Builder/attestation/precompile down |
 | This asset cannot be listed by ticker | UX | User typed a symbol we will not key on |
-| No live market window | Vault | `/vault` with no PASS window |
 
 Proof verified + condition not met is a **successful verification** and a **failed policy**. Show both:
 

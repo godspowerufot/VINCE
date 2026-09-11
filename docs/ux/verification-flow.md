@@ -6,7 +6,7 @@ Title of the page is **Verified Market Gate**, never a hardcoded ticker. The mat
 
 ## Default
 
-Subtitle: Ethereum source · Creditcoin decision
+Subtitle: Ethereum source · Attestcoin proof · Creditcoin policy
 
 Primary control: paste source transaction hash.
 
@@ -20,7 +20,7 @@ Three checks, in order:
 
 Show window remaining after PASS.
 
-Button: **Verify transaction**, then **Continue to vault** only after PASS.
+Button: **Verify transaction**, then **Submit on Creditcoin**, then **Open the desk** only after PASS.
 
 ## Advanced panel
 

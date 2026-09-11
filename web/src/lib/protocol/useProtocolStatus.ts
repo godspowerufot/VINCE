@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { seedMarkets } from "./markets";
 import type { ListedMarket } from "./types";
-import type { ChainWindow, MarketsPayload, WindowPayload } from "./sepoliaRead";
+import type { ChainWindow, MarketsPayload, WindowPayload } from "./settlementRead";
 
 export type VaultMarket = ListedMarket & {
   lastPrice: string | null;
@@ -15,8 +14,9 @@ export type ProtocolStatus = {
   live: boolean;
   window: ChainWindow | null;
   markets: VaultMarket[];
-  source: "seed" | "registry";
+  source: "none" | "registry";
   loading: boolean;
+  error?: string;
 };
 
 function decorate(
@@ -42,8 +42,8 @@ export function useProtocolStatus(): ProtocolStatus {
     protocolDeployed: false,
     live: false,
     window: null,
-    markets: decorate(seedMarkets().filter((row) => row.ready), false, null),
-    source: "seed",
+    markets: [],
+    source: "none",
     loading: true,
   });
 
@@ -72,10 +72,15 @@ export function useProtocolStatus(): ProtocolStatus {
           ),
           source: marketsJson.source,
           loading: false,
+          error: marketsJson.error,
         });
       } catch {
         if (!cancelled) {
-          setState((prev) => ({ ...prev, loading: false }));
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            error: "Could not read on-chain markets. Fail closed.",
+          }));
         }
       }
     }

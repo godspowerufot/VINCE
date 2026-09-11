@@ -1,4 +1,4 @@
-import { readWindow } from "@/lib/protocol/sepoliaRead";
+import { readWindow } from "@/lib/protocol/settlementRead";
 
 export const runtime = "nodejs";
 

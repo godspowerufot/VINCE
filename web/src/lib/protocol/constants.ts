@@ -16,6 +16,17 @@ export const ETHEREUM = {
   ],
 } as const;
 
+export const CREDITCOIN = {
+  chainId: 102031,
+  chainIdHex: "0x018eaf",
+  name: "Creditcoin Testnet",
+  rpc: "https://rpc.cc3-testnet.creditcoin.network",
+  explorer: "https://creditcoin-testnet.blockscout.com",
+  symbol: "CTC",
+} as const;
+
+export const SETTLEMENT = CREDITCOIN;
+
 export const ATTESTCOIN = {
   prover: "0x0000000000000000000000000000000000000FD2",
   chainInfo: "0x0000000000000000000000000000000000000FD3",

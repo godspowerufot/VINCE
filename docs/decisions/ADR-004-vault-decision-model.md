@@ -11,7 +11,7 @@ Updated: 2026-09-10
 3. Borrow limit is a fixed LTV while that window is live.
 4. MVP collateral is a mock ERC-20 on Creditcoin (`vUSD`), 18 decimals, demo dollars.
 
-The core of the application remains: **pasted tx → Attestcoin proof → Creditcoin verify**. The vault is only a consumer of that result.
+The core of the application remains: **pasted tx → Attestcoin proof → policy**. This vault is a lab consumer of that result, not the product ([ADR-013](./ADR-013-gate-is-the-product.md)).
 
 ## Time window
 

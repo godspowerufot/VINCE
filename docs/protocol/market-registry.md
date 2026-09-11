@@ -33,14 +33,16 @@ sourceNotes
 - Changing `feed` / `feedAggregator` / `minimumPrice` is security-critical.
 - A paused market must fail closed.
 
-## MVP Ethereum listings (Attestcoin chainKey 3)
+## Sourced Ethereum aggregators (Attestcoin chainKey 3)
 
-| id | Display | Emitter (aggregator) | minimumPrice | Source |
+These addresses are **candidates**. Live `VinceRegistry` starts empty. Deploy scripts do not seed rows. Until the owner calls `listMarket`, every emitter is `REJECT_FEED`.
+
+| id (if listed) | Display | Emitter (aggregator) | suggested minimumPrice | Source |
 | --- | --- | --- | --- | --- |
 | `eth-bat-usd` | BAT/USD | `0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc` | `5e6` ($0.05) | Phase 2 `description()` |
 | `eth-tsla-usd` | TSLA/USD | UNKNOWN — copy from Chainlink TSLA-USD 24/5 | `250e8` ($250) | [data.chain.link](https://data.chain.link/feeds/ethereum/mainnet/tsla-usd-kalman-24-5) |
 
-Add more Ethereum USD feeds the same way: source the aggregator, set a market-specific floor, list it.
+Add more Ethereum USD feeds the same way: source the aggregator, set a market-specific floor, then list it.
 
 Phase 2 pasted hash `0x21cdce…e2a0` matches **BAT/USD**, not TSLA.
 

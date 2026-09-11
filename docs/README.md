@@ -1,6 +1,6 @@
 # VINCE documentation
 
-Documentation is the product until Phase 2 proves a real source-chain transaction can be verified on Creditcoin.
+Documentation maps the live protocol. Phase 2 proved a pasted Ethereum tx on Creditcoin. Settlement is Creditcoin Testnet ([ADR-014](./decisions/ADR-014-creditcoin-settlement.md)).
 
 ## How to read this
 
@@ -42,7 +42,9 @@ docs/                     everything below
 | [decisions/ADR-009-application-stack.md](./decisions/ADR-009-application-stack.md) | Accepted |
 | [decisions/ADR-010-user-pastes-tx.md](./decisions/ADR-010-user-pastes-tx.md) | Accepted |
 | [decisions/ADR-011-multi-market-registry.md](./decisions/ADR-011-multi-market-registry.md) | Accepted |
-| [decisions/ADR-012-sepolia-policy-lab.md](./decisions/ADR-012-sepolia-policy-lab.md) | Accepted |
+| [decisions/ADR-012-sepolia-policy-lab.md](./decisions/ADR-012-sepolia-policy-lab.md) | Superseded |
+| [decisions/ADR-013-gate-is-the-product.md](./decisions/ADR-013-gate-is-the-product.md) | Accepted |
+| [decisions/ADR-014-creditcoin-settlement.md](./decisions/ADR-014-creditcoin-settlement.md) | Accepted |
 
 ### Protocol
 

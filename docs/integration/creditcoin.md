@@ -48,7 +48,9 @@ Example deploy shape from the guide:
 npx hardhat ignition deploy ignition/modules/<Module>.ts --network creditcoin_testnet
 ```
 
-## VINCE contract set (later)
+## VINCE contract set
+
+Live on Creditcoin Testnet via `npm run deploy:testnet` ([ADR-014](../decisions/ADR-014-creditcoin-settlement.md)). Addresses: [`contracts/deployments/creditcoin-testnet.json`](../../contracts/deployments/creditcoin-testnet.json). Registry starts empty.
 
 See [../contracts/architecture.md](../contracts/architecture.md).
 

@@ -13,7 +13,7 @@ Creditcoin settlement: registry, Attestcoin verifier, policy engine, gate, vault
 | `VinceVault` | 50% LTV on vUSD while `engine.inWindow()`. No proofs. |
 | `MockVUSD` | 18-decimal faucet token. |
 
-MVP seed listing: BAT/USD aggregator `0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc`, floor `$0.05` (`5e6`). TSLA/USD aggregator is still unsourced — do not invent it. Use `listMarket` when you have a cited aggregator.
+Deploy does **not** auto-list a feed. Registry starts empty. Owner lists a sourced aggregator via `listMarket` (UI `/markets` or `npm run list-market`). Unlisted emitter → `REJECT_FEED`. TSLA/USD aggregator is still unsourced — do not invent it.
 
 ## Test
 
@@ -35,7 +35,7 @@ npx hardhat vars set CREDITCOIN_PRIVATE_KEY
 npm run deploy:testnet
 ```
 
-On Hardhat/localhost the script deploys mocks. On `creditcoin_testnet` it uses prover `0x0FD2` and decoder `0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f`.
+Live addresses: [`deployments/creditcoin-testnet.json`](./deployments/creditcoin-testnet.json). Registry starts empty. On Hardhat/localhost the script deploys mocks. On `creditcoin_testnet` it uses prover `0x0FD2` and decoder `0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f`.
 
 ## List another Ethereum feed
 
