@@ -1,0 +1,22 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployedAt": "2026-09-10T23:59:13.251Z",
+  "deployer": "0x10Ede187d03D651fc68f62a2d6501F67A6e93a86",
+  "prover": "0x0000000000000000000000000000000000000FD2",
+  "decoder": null,
+  "registry": "0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85",
+  "verifier": null,
+  "engine": "0x22795a74eFAD58c2E7D7160E3254Ce814380094E",
+  "gate": "0x22795a74eFAD58c2E7D7160E3254Ce814380094E",
+  "vault": "0x51Ce2eEb608067E3Ecff94BEcaB4B2449e66B7Fe",
+  "vusd": "0xE40049B2907F5e3a64892cEB87E46D0bd04b6cE9",
+  "seed": {
+    "id": "eth-bat-usd",
+    "displayName": "BAT/USD",
+    "feedAggregator": "0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc",
+    "minimumPrice": "5000000",
+    "maxAgeSeconds": 604800,
+    "source": "ADR-012 Sepolia policy lab"
+  }
+}

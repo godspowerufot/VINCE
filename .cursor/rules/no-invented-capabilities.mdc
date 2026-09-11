@@ -1,0 +1,18 @@
+---
+description: Do not invent chain, SDK, or token capabilities
+alwaysApply: true
+---
+
+# No invented capabilities
+
+If official docs do not state it, do not ship it as fact.
+
+- Attestcoin source chains: only what `getSupportedChains()` or environment docs list.
+- Token addresses: only from `docs/protocol/market-registry.md` with citation.
+- DEX pools: UNKNOWN until Phase 1 sources them.
+- Proof Builder URLs: two official variants exist; do not assume which works.
+- Precompile `0x0FD2` proves inclusion, not success. Receipt status `0x1` is mandatory.
+- Chainlink Base equity feeds are not DEX prices and are 24/5. MVP settlement uses those feeds (ADR-003). Prove a feed-**update** transaction, not `eth_call`.
+- Sepolia harness ≠ Base/TSLAc market decision (ADR-005).
+
+If docs conflict with this repo, add an item to `docs/references/open-questions.md` and stop.

@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: oklch(0.105 0.006 260);
+  --color-surface: oklch(0.152 0.01 258);
+  --color-line: oklch(0.236 0.016 255);
+  --color-ink: oklch(0.97 0.006 250);
+  --color-mute: oklch(0.78 0.02 250);
+  --color-accent: oklch(0.57 0.13 262);
+  --color-accent-deep: oklch(0.47 0.12 262);
+  --color-danger: oklch(0.72 0.1 25);
+  --color-on-accent: oklch(0.99 0.004 250);
+  --color-rail: oklch(0.125 0.008 260);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-poppins);
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "tnum" 1, "ss01" 0;
+}
+
+::selection {
+  background: oklch(0.57 0.13 262 / 0.28);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+input,
+textarea {
+  caret-color: var(--color-accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+@media (color-gamut: p3) {
+  :root {
+    --color-accent: oklch(0.57 0.16 262);
+  }
+}

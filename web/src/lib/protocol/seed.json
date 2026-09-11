@@ -1,0 +1,15 @@
+{
+  "markets": [
+    {
+      "id": "eth-bat-usd",
+      "displayName": "BAT/USD",
+      "kind": "REFERENCE_FEED",
+      "sourceChainKey": 3,
+      "sourceChainId": 1,
+      "feedAggregator": "0x1c9049C48C24111A3546a73C67FD2A4Fc6C86Fdc",
+      "minimumPrice": "5000000",
+      "maxAgeSeconds": 604800,
+      "decimals": 8
+    }
+  ]
+}

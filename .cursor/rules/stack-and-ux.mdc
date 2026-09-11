@@ -1,0 +1,13 @@
+---
+description: Stack and UX rules when application or contract files exist
+globs: "{app,src,contracts,frontend,apps}/**/*.{ts,tsx,sol,css}"
+alwaysApply: false
+---
+
+# VINCE stack
+
+- Frontend: Next.js, TypeScript, Tailwind. Colors black and blue. Inter body, Poppins display.
+- Default UI hides Merkle/continuity details; advanced panel may show them.
+- Copy must distinguish proof verified vs market condition satisfied.
+- Contracts: Solidity + Hardhat. No `setPrice`. No verification bypass.
+- Use `@gluwa/usc-sdk` for proofs. Do not hand-roll a prover without an ADR.
