@@ -7,7 +7,7 @@ Written from the shipped preview UI in `web/`, 2026-09-10.
 | Surface | Mode |
 | --- | --- |
 | `/` | Persuade, restrained |
-| `/gate` `/desk` `/markets` `/activity` | Operate |
+| `/gate` `/receipt` `/markets` `/activity` | Operate |
 
 ## World
 
@@ -33,7 +33,7 @@ Hue held at ~260. Chroma kept mid so the blue is quieter than `#2F6FED`. Display
 
 ## Layout
 
-Left rail (VINCE + nav), not a centered column. Work area is a two-pane split: intent on the left, result or teaching copy on the right. Radius 14px. No nested cards, no kickers, no Merkle on the default path.
+Left rail (VINCE + nav), not a centered column. Work area is a two-pane split: intent on the left, result or teaching copy on the right. Radius 14px. No nested cards, no kickers. Merkle lives on the Receipt annex ([ADR-015](../docs/decisions/ADR-015-attestation-receipt.md)), not as the first line of the gate.
 
 ## Motion
 

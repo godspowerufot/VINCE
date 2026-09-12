@@ -8,13 +8,13 @@ The name exists so architecture docs stay coherent. It is an internal protocol i
 
 ## One sentence
 
-A verified market gate: paste an Ethereum feed-update, Attestcoin proves inclusion on Creditcoin, VINCE scores the listed rule, a Creditcoin desk may act only after `PASS`. Proof ≠ PASS.
+A verified market gate: paste an Ethereum feed-update, Attestcoin proves inclusion on Creditcoin, VINCE issues a Receipt. The product stops at attestation. Proof ≠ a trading license.
 
 ## What VINCE is
 
 - A **gate**: a user may continue only if a verified observation satisfies policy.
 - A **decision protocol**: observation, verification, normalization, policy, decision, execution.
-- A **desk consumer**: `/desk` may `releaseFinancing` only while a PASS window is live ([ADR-013](./decisions/ADR-013-gate-is-the-product.md)).
+- A **Receipt**: the shareable end of the product ([ADR-018](./decisions/ADR-018-attest-only-product.md)).
 - A vault exists only as a **lab consumer**. It is not in the UI.
 
 ## What VINCE is not
@@ -78,14 +78,14 @@ As infrastructure, the hard part is not proving a transaction happened. The hard
 
 ## MVP product
 
-**Verified Market Gate** plus a **Creditcoin RWA desk**.
+**Verified Market Gate** plus a **Receipt** (RWA track: the condition is a real-world market print).
 
 ```text
 Asset      listed feed (owner-registered aggregator)
 Required   that market’s floor
 Observed   proven AnswerUpdated
 Decision   PASS or REJECT
-Desk       release financing only while PASS is live
+Receipt    the product stops here
 ```
 
 Live registry starts empty. Unlisted → `REJECT_FEED`.
@@ -94,7 +94,7 @@ Live registry starts empty. Unlisted → `REJECT_FEED`.
 
 The UI is a financial gate, not an oracle console.
 
-Simple path: paste, two verdicts, listed markets, desk.
+Simple path: paste, attest, receipt.
 
 Advanced path: chain, block, transaction, proof type, attestation status.
 

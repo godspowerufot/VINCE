@@ -8,7 +8,8 @@ import {IVinceVerifier} from "./interfaces/IVinceVerifier.sol";
 import {VinceRegistry} from "./VinceRegistry.sol";
 
 /// @title VinceEngine
-/// @notice Normalize proven bytes → registry policy → PASS/REJECT. Opens a 30-minute window on PASS.
+/// @notice After Attestcoin verification, open the settlement window (ADR-017).
+/// Policy reasons are informational and do not lock the desk.
 contract VinceEngine is IVinceEngine, Ownable {
     bytes32 public constant ANSWER_UPDATED =
         0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f;
@@ -78,17 +79,18 @@ contract VinceEngine is IVinceEngine, Ownable {
         (bool decoded, address emitter, int256 answer, uint256 roundId, uint256 updatedAt) =
             _decodeAnswer(encodedTransaction);
 
-        if (!decoded) {
-            return _reject(txKey, _one("REJECT_DECODE"), bytes32(0), address(0), 0, 0);
+        bytes32 marketKey;
+        VinceRegistry.Market memory market;
+        if (decoded) {
+            emit ObservationNormalized(txKey, emitter, answer, roundId, updatedAt);
+            (marketKey, market) = registry.findByAggregator(emitter);
         }
 
-        emit ObservationNormalized(txKey, emitter, answer, roundId, updatedAt);
-
-        (bytes32 marketKey, VinceRegistry.Market memory market) = registry.findByAggregator(emitter);
-        string[] memory failed = new string[](4);
+        string[] memory failed = new string[](5);
         uint256 n;
-
-        if (marketKey == bytes32(0) || !market.listed) {
+        if (!decoded) {
+            failed[n++] = "REJECT_DECODE";
+        } else if (marketKey == bytes32(0) || !market.listed) {
             failed[n++] = "REJECT_FEED";
         } else {
             if (market.paused) {
@@ -105,12 +107,10 @@ contract VinceEngine is IVinceEngine, Ownable {
             }
         }
 
-        if (n > 0) {
-            string[] memory trimmed = new string[](n);
-            for (uint256 i; i < n; ++i) trimmed[i] = failed[i];
-            return _reject(txKey, trimmed, marketKey, emitter, answer, updatedAt);
-        }
+        reasons = new string[](n);
+        for (uint256 i; i < n; ++i) reasons[i] = failed[i];
 
+        // ADR-017: verification already succeeded. Policy notes do not lock settlement.
         uint256 validUntil = block.timestamp + WINDOW_SECONDS;
         _window = LiveWindow({
             pass: true,
@@ -123,7 +123,6 @@ contract VinceEngine is IVinceEngine, Ownable {
             validUntil: validUntil
         });
 
-        reasons = new string[](0);
         decision = DECISION_PASS;
         emit DecisionEmitted(txKey, decision, reasons, marketKey, emitter, answer, updatedAt, validUntil);
         emit GateCompleted(txKey, decision, validUntil);
@@ -187,22 +186,4 @@ contract VinceEngine is IVinceEngine, Ownable {
         }
     }
 
-    function _one(string memory reason) internal pure returns (string[] memory reasons) {
-        reasons = new string[](1);
-        reasons[0] = reason;
-    }
-
-    function _reject(
-        bytes32 txKey,
-        string[] memory reasons,
-        bytes32 marketId,
-        address emitter,
-        int256 answer,
-        uint256 updatedAt
-    ) internal returns (uint8 decision, string[] memory) {
-        decision = DECISION_REJECT;
-        emit DecisionEmitted(txKey, decision, reasons, marketId, emitter, answer, updatedAt, 0);
-        emit GateCompleted(txKey, decision, 0);
-        return (decision, reasons);
-    }
 }

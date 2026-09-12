@@ -4,7 +4,7 @@
 
 BUIDL CTC 2026 Fall · **RWA track** · Attestcoin Protocol is the core feature.
 
-Creditcoin apps cannot trust a price API. VINCE lets a user **paste an Ethereum feed-update**. Attestcoin proves inclusion on Creditcoin (`verifySingle`, then on-chain `verifyAndEmit` at `0x0FD2`). VINCE decides whether that **listed** market’s rule passed. A Creditcoin **desk** may release financing only after `PASS`. Proof ≠ PASS.
+Creditcoin apps cannot trust a price API. VINCE lets a user **paste an Ethereum feed-update**. Attestcoin proves inclusion on Creditcoin (`verifySingle`). VINCE issues a shareable **Receipt**. The product **stops at attestation**. Proof ≠ a trading license.
 
 ```text
 Ethereum feed-update     user pastes the hash
@@ -15,7 +15,7 @@ VinceGate on Creditcoin  verifyAndEmit at 0x0FD2  (CTC)
         ↓
 VinceEngine              listed emitter · floor · freshness
         ↓
-VinceDesk                release financing only while PASS is live
+Receipt                  shareable record — product stops here
 ```
 
 MVP source is **Ethereum Mainnet** (CC3 Testnet `chainKey` 3). Base / TSLAc are **not** claimed. They wait until `getSupportedChains()` lists Base.
@@ -26,12 +26,12 @@ MVP source is **Ethereum Mainnet** (CC3 Testnet `chainKey` 3). Base / TSLAc are 
 cd web && npm install && npm run dev
 ```
 
-Connect the injected wallet to **Creditcoin Testnet** (CTC). Paste is first; wallet is only for submit / desk / owner list.
+Paste is first. Wallet is only for the registry owner on `/markets`.
 
 | Route | What it is |
 | --- | --- |
-| `/gate` | Paste tx · Attestcoin proofs · submit on Creditcoin |
-| `/desk` | Locked until PASS · then release financing |
+| `/gate` | Paste tx · Attestcoin proofs · receipt |
+| `/receipt` | Shareable VINCE Receipt (re-runs observation) |
 | `/markets` | VinceRegistry · RPC latest (unverified) vs attested |
 
 Example print (measured Phase 2; **not auto-listed**):  
@@ -51,7 +51,7 @@ Code: `web/src/lib/protocol/observe.ts` (`@gluwa/usc-sdk`). On-chain: `VinceVeri
 | Attest | `waitUntilHeightAttested(chainKey, height)` |
 | Prove | Hosted Proof Builder `https://prover.cc3-testnet.creditcoin.network` |
 | Verify (view) | `PrecompileBlockProver.verifySingle` at `0x0FD2` (no CTC) |
-| Verify (settlement) | `VinceGate.submitSourceTransaction` → `verifyAndEmit` (CTC) |
+| Verify (product) | Worker `verifySingle` at `0x0FD2` — UI stops here |
 | Receipt | Source status `0x1` required (inclusion ≠ success) |
 
 Measured 2026-09-10: `verifySingle === true` on the BAT hash above. Log: [`docs/testing/phase2-experiment-log.md`](./docs/testing/phase2-experiment-log.md).

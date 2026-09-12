@@ -12,13 +12,14 @@ Wallet is not the first click. Paste is. Connect Creditcoin Testnet only to subm
 
 ```text
 /            Landing — what this is, Open the gate
-/gate        Paste hash. Verify transaction
-/desk        Locked until PASS. Release financing
+/gate        Paste hash. Verify transaction. Receipt
+/receipt     Shareable VINCE Receipt
+/desk        Redirects to /gate (settlement removed)
 /markets     VinceRegistry listings
 /activity    Past proofs and decisions
 ```
 
-Nav: **Gate** · **Desk** · **Markets** · **Activity**.
+Nav: **Gate** · **Receipt** · **Markets** · **Activity**.
 
 ## Screen 0 — Landing (`/`)
 
@@ -37,7 +38,7 @@ VINCE decides if that listed market’s rule passed.
 How it works
   1. Copy a Chainlink feed-update tx on Ethereum
   2. Paste it here. We prove inclusion on Creditcoin
-  3. See two results: proof verified  ·  condition met or not
+  3. Take the receipt — inclusion · Merkle annex · policy. Not a trading license.
 
 Listed now     (from VinceRegistry — empty until owner lists)
 Coming         TSLA/USD (address still being sourced)
@@ -108,25 +109,24 @@ Verifying on Creditcoin…
 
 If they pasted an address (`0x413e…`), stop here: **That looks like a wallet, not a transaction. Paste the 64-character hash of a feed-update.**
 
-## Screen 3a — Two verdicts (always)
+## Screen 3a — Receipt (always)
 
-After verification, the page splits into two facts. Never collapse them.
+After verification, the gate issues a VINCE Receipt. Two facts stay separate. Merkle is the annex, not the headline. The receipt is a record, not a trading license ([ADR-015](../decisions/ADR-015-attestation-receipt.md)).
 
 ```text
-Matched market     BAT/USD          (from the feed, not from the title)
+VINCE RECEIPT                         VNC-21CD-E2A0
+BAT/USD
 
-Official feed      $0.0719
-Required           ≥ $0.05          (that listing’s floor)
+Observed print     $0.0719
+Required           ≥ $0.05
 
-✓ Verified on Ethereum
-✓ Cross-chain proof verified
-✓ Market condition satisfied
+✓ Inclusion verified
+✓ PASS
 
-Window             29:12 remaining
-
-              [ Open the desk ]
-
-[ Verification details ]            collapsed
+Proof annex        Merkle root · siblings · continuity
+              [ Copy share link ]
+              [ Submit on Creditcoin ]
+              [ Open standalone receipt ]
 ```
 
 **Continue** is enabled only on PASS.
@@ -192,12 +192,13 @@ RPC latest cannot PASS. Only a pasted, proven print can.
 | Where do I get a transaction? | User chooses the print; VINCE does not hunt |
 | Verify transaction | Inclusion proof is a wait, not an API quote |
 | Two checkmarks | Proof ≠ PASS |
+| Copy share link | The receipt is the artifact; it is not a trading license |
 | See listed markets | PASS is a policy result, not a borrow unlock |
-| Verification details | Optional audit; Merkle lives here only |
+| Proof annex | Merkle root and siblings live on the receipt, not the first line |
 
 ## Copy that must never appear on the default path
 
-- Merkle tree, continuity proof, precompile `0x0FD2`
+- Precompile `0x0FD2` as the first line (Merkle belongs on the receipt annex only)
 - “Verified on Base” for an Ethereum or Sepolia proof
 - “TSLA/USD” as the page title before decode
 - “We added GOOGL to the registry”
@@ -209,7 +210,7 @@ The user has onboarded when they can say:
 
 1. I pasted a hash I copied from a feed-update.
 2. VINCE showed me which market that print was.
-3. Proof verified and condition met are different lines.
-4. Only a listed market can open a window.
+3. Proof verified and condition met are different lines on a shareable receipt.
+4. Only a listed market can open a window. The receipt is not a trading license.
 
 They do not need to know Attestcoin’s precompile address.

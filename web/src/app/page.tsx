@@ -15,8 +15,8 @@ export default async function LandingPage() {
               Paste a real Ethereum market print.
             </h1>
             <p className="mt-6 text-[17px] leading-7 text-mute">
-              Creditcoin verifies it happened. VINCE decides whether that listed
-              market’s rule passed. A Creditcoin desk may act only after PASS.
+              Creditcoin verifies it happened. VINCE issues a receipt. The
+              product stops at attestation.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
@@ -26,10 +26,10 @@ export default async function LandingPage() {
                 Open the gate
               </Link>
               <Link
-                href="/desk"
+                href="/receipt"
                 className="text-[14px] text-mute transition-colors duration-200 hover:text-ink"
               >
-                Open the desk
+                Open a receipt
               </Link>
             </div>
             <p className="mt-auto hidden pt-16 text-[12px] text-mute lg:block">
@@ -50,11 +50,11 @@ export default async function LandingPage() {
                 </li>
                 <li>
                   <span className="block text-ink">Paste it on the gate</span>
-                  Attestcoin proves inclusion. Wallet is later.
+                  Attestcoin proves inclusion. No wallet required.
                 </li>
                 <li>
-                  <span className="block text-ink">Unlock the desk</span>
-                  A Creditcoin RWA desk may release financing only after PASS.
+                  <span className="block text-ink">Take the receipt</span>
+                  Share the proved print. That is the end of the flow.
                 </li>
               </ol>
             </div>

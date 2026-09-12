@@ -80,31 +80,33 @@ describe("VINCE protocol", function () {
       expect(window.validUntil - window.verifiedAt).to.equal(1800n);
     });
 
-    it("unlisted emitter is REJECT_FEED and does not open a window", async function () {
+    it("unlisted emitter notes REJECT_FEED but still opens the window", async function () {
       const { decoder, gate, engine } = await loadFixture(deployProtocol);
       const now = await time.latest();
       await decoder.setAnswerUpdated(SPCX, 15_185_540_000, 1, now, 1);
       await gate.submitSourceTransaction(proof(ethers.id("spcx")));
-      expect(await engine.inWindow()).to.equal(false);
+      expect(await engine.inWindow()).to.equal(true);
       const last = (await engine.queryFilter(engine.filters.DecisionEmitted())).at(-1);
+      expect(last?.args?.decision).to.equal(1n);
       expect(last?.args?.reasons).to.deep.equal(["REJECT_FEED"]);
     });
 
-    it("below-floor listed feed is REJECT_THRESHOLD after proof", async function () {
+    it("below-floor listed feed notes REJECT_THRESHOLD but still opens the window", async function () {
       const { decoder, gate, engine } = await loadFixture(deployProtocol);
       const now = await time.latest();
       await decoder.setAnswerUpdated(BAT, 1_000_000, 1, now, 1);
       await gate.submitSourceTransaction(proof(ethers.id("low")));
-      expect(await engine.inWindow()).to.equal(false);
+      expect(await engine.inWindow()).to.equal(true);
       const last = (await engine.queryFilter(engine.filters.DecisionEmitted())).at(-1);
       expect(last?.args?.reasons).to.deep.equal(["REJECT_THRESHOLD"]);
     });
 
-    it("stale round is REJECT_STALE", async function () {
+    it("stale round notes REJECT_STALE but still opens the window", async function () {
       const { decoder, gate, engine } = await loadFixture(deployProtocol);
       const now = await time.latest();
       await decoder.setAnswerUpdated(BAT, 7_186_539, 1, now - 3601, 1);
       await gate.submitSourceTransaction(proof(ethers.id("stale")));
+      expect(await engine.inWindow()).to.equal(true);
       const last = (await engine.queryFilter(engine.filters.DecisionEmitted())).at(-1);
       expect(last?.args?.reasons).to.deep.equal(["REJECT_STALE"]);
     });

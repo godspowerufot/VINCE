@@ -19,14 +19,20 @@ From [Creditcoin Endpoints](https://docs.creditcoin.org/smart-contract-guides/cr
 
 ### Testnet — default for VINCE
 
+Official [Creditcoin Endpoints](https://docs.creditcoin.org/smart-contract-guides/creditcoin-endpoints) (also the CC3 Testnet ASC table):
+
 | Field | Value |
 | --- | --- |
-| Name | Creditcoin Testnet |
+| Network name | Creditcoin Testnet |
 | HTTPS RPC | `https://rpc.cc3-testnet.creditcoin.network` |
 | WSS | `wss://rpc.cc3-testnet.creditcoin.network` |
-| Chain ID | `102031` |
-| Symbol | CTC |
-| Explorer | https://creditcoin-testnet.blockscout.com/ |
+| EVM chain ID | `102031` (`0x18e8f`) |
+| Currency | CTC |
+| Blockscout | https://creditcoin-testnet.blockscout.com/ |
+| Subscan | https://creditcoin3-testnet.subscan.io/ |
+| Proof generator | `https://prover.cc3-testnet.creditcoin.network/` |
+
+Wallet `wallet_addEthereumChain` must use that HTTPS RPC and chain ID `102031` (`0x18e8f`). `0x18eaf` is **102063** — never use it.
 
 ### Local
 

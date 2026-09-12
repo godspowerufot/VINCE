@@ -37,12 +37,20 @@ export default function ActivityPage() {
                 <p className="mt-1 text-[13px] text-mute">
                   {shortenHash(item.tx, 8)}
                 </p>
-                <Link
-                  href={`/gate?tx=${item.tx}`}
-                  className="mt-3 inline-block text-[13px] text-accent transition-colors duration-200 hover:text-ink"
-                >
-                  Open on the gate
-                </Link>
+                <div className="mt-3 flex flex-wrap gap-x-5">
+                  <Link
+                    href={`/gate?tx=${item.tx}`}
+                    className="text-[13px] text-accent transition-colors duration-200 hover:text-ink"
+                  >
+                    Open on the gate
+                  </Link>
+                  <Link
+                    href={`/receipt?tx=${item.tx}`}
+                    className="text-[13px] text-mute transition-colors duration-200 hover:text-ink"
+                  >
+                    Open receipt
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

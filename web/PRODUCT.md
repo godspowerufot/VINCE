@@ -14,13 +14,13 @@ Delegated from ADR-009: Next.js, TypeScript, Tailwind CSS. Inter for body, Poppi
 
 Primary: a person who needs a Creditcoin financial yes-or-no without trusting VINCE’s backend to report another chain’s market. They paste a source-chain transaction hash, then connect Creditcoin Testnet to submit.
 
-Secondary: a Creditcoin app (the desk) that must not proceed without PASS.
+Secondary: a counterparty who opens a shared Receipt and re-runs observation.
 
 ## Product Purpose
 
-VINCE is a verified market gate plus an RWA desk. The user points at a real Ethereum Chainlink feed-update. Attestcoin proves inclusion on Creditcoin. VINCE decides whether that **listed** market’s rule passed. The desk may release financing only after PASS.
+VINCE is a verified market gate. The user points at a real Ethereum Chainlink feed-update. Attestcoin proves inclusion on Creditcoin. VINCE issues a Receipt. The product stops at attestation ([ADR-018](../docs/decisions/ADR-018-attest-only-product.md)). Hackathon track is still RWA: the condition is a real-world market print.
 
-Success: the user can say they pasted a hash they chose, saw which market it was, that proof and PASS are different lines, and that the desk stayed locked until PASS.
+Success: the user can say they pasted a hash they chose, Attestcoin verified it, and they received a shareable Receipt. The receipt is a record, not a trading license and not a settlement ([ADR-015](../docs/decisions/ADR-015-attestation-receipt.md), [ADR-018](../docs/decisions/ADR-018-attest-only-product.md)).
 
 ## Positioning
 
@@ -45,3 +45,4 @@ Creditcoin does not act on an API price. Action is reconstructable from source t
 | REJECT_FEED | Emitter not listed |
 | Window | 30 minutes after PASS |
 | Preview | Worker `verifySingle` + policy preview; not the on-chain decision until Submit |
+| Receipt | Shareable invoice-style record of the proved print and the policy line. Not a token certificate. |

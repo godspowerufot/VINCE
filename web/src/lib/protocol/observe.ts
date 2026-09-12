@@ -219,19 +219,18 @@ export async function observeSourceTx(
     reasons.push("REJECT_STALE");
   }
 
-  const pass = reasons.length === 0 && Boolean(listed);
   const observedHuman = answer != null ? formatUsd8(answer) : null;
   const requiredHuman = listed?.minimumPrice
     ? floorLabel(BigInt(listed.minimumPrice))
     : null;
 
-  let conditionLabel = "Market condition satisfied";
+  let conditionLabel = "Attested";
   if (!statusOk) conditionLabel = "Source transaction failed";
-  else if (!answerLogs.length) conditionLabel = "Not a Chainlink feed-update";
-  else if (!listed) conditionLabel = "This market is not listed";
-  else if (reasons.includes("REJECT_THRESHOLD")) conditionLabel = "Price is below this market’s floor";
-  else if (reasons.includes("REJECT_STALE")) conditionLabel = "This print is too old";
-  else if (reasons.includes("REJECT_SOURCE_CHAIN")) conditionLabel = "Wrong source chain for this listing";
+  else if (!answerLogs.length) conditionLabel = "Attested — not a Chainlink feed-update";
+  else if (!listed) conditionLabel = "Attested — feed is not listed";
+  else if (reasons.includes("REJECT_THRESHOLD")) conditionLabel = "Attested — print is below the listed floor";
+  else if (reasons.includes("REJECT_STALE")) conditionLabel = "Attested — print is old";
+  else if (reasons.includes("REJECT_SOURCE_CHAIN")) conditionLabel = "Attested — source chain note";
 
   const result: ObserveResult = {
     tx: txHash,
@@ -239,16 +238,15 @@ export async function observeSourceTx(
     listed: Boolean(listed),
     observedHuman,
     requiredHuman,
-    requiredNote: listed ? null : "this market is not listed",
+    requiredNote: listed ? null : "Listing is optional. The product stops at attestation.",
     chainLabel,
     proof: "pass",
-    condition: pass ? "pass" : "fail",
+    condition: statusOk ? "pass" : "fail",
     conditionLabel,
-    decision: pass ? "PASS" : "REJECT",
-    reasons: pass ? ["PASS"] : reasons,
-    footnote: listed
-      ? null
-      : "VINCE proved the print. It did not open a window. Listing is an owner action, not a side effect of paste.",
+    decision: statusOk ? "PASS" : "REJECT",
+    reasons: statusOk ? (reasons.length ? reasons : ["PASS"]) : reasons,
+    footnote:
+      "Attestcoin verified the source tx. VINCE does not settle from this receipt.",
     preview: true,
     settlementTx: null,
     merkleProof,

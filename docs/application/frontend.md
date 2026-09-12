@@ -1,6 +1,6 @@
 # Frontend
 
-Status: Gate, desk, and markets wired in `web/`. Worker at `POST /api/observe`. Settlement is Creditcoin Testnet (ADR-014). The product is the gate + desk (ADR-013).
+Status: Gate, desk, and markets wired in `web/`. Worker at `POST /api/observe`. Settlement is Creditcoin Testnet (ADR-014). The product is the gate + receipt (ADR-013, ADR-015, ADR-018). Settlement is out of the UI.
 
 ## Stack
 
@@ -58,7 +58,7 @@ Required             ≥ $0.05
 Window               29:12 remaining
 
               [ Submit on Creditcoin ]
-              [ Open the desk ]
+              [ Open standalone receipt ]
 ```
 
 Advanced panel (collapsed):
@@ -78,7 +78,7 @@ Creditcoin tx    0x…
 Window until     …
 ```
 
-Never lead with Merkle trees.
+Never lead the gate with Merkle trees. Merkle belongs on the Receipt annex ([ADR-015](../decisions/ADR-015-attestation-receipt.md)).
 
 ## UX mapping to protocol states
 
@@ -108,7 +108,8 @@ That last distinction is mandatory. See [../ux/error-states.md](../ux/error-stat
 ```text
 /                       landing + three-step onboarding
 /gate                   Verified Market Gate (paste-first)
-/desk                   RWA desk — locked until PASS
+/receipt                shareable VINCE Receipt (re-runs observation)
+/desk                   redirects to /gate (removed from the product)
 /markets                listed feeds; owner listMarket
 /activity               user's proofs and decisions
 ```

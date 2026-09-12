@@ -2,31 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useSyncExternalStore } from "react";
-import { Contract, Interface } from "ethers";
+import { useEffect, useRef, useState } from "react";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
+import { ReceiptCard } from "@/components/ReceiptCard";
 import { Split } from "@/components/AppShell";
 import { HashField } from "@/components/HashField";
 import { HelpDrawer } from "@/components/HelpDrawer";
-import { ProofPanel } from "@/components/ProofPanel";
 import { StageStatus } from "@/components/StageStatus";
-import { Verdict } from "@/components/Verdict";
-import { WindowClock } from "@/components/WindowClock";
-import gateAbi from "@/lib/abi/VinceGate.json";
+import { receiptPath } from "@/lib/protocol/receipt";
 import { EXAMPLE_TX } from "@/lib/fixtures";
 import { classifyHash } from "@/lib/hash";
-import { ENGINE_ABI } from "@/lib/protocol/abi";
-import { PROTOCOL, protocolDeployed } from "@/lib/protocol/deployments";
-import type { ListedMarket, ObserveEvent, ObserveResult, PolicyReason } from "@/lib/protocol/types";
+import type { ListedMarket, ObserveEvent, ObserveResult } from "@/lib/protocol/types";
 import { runObserve } from "@/lib/protocol/runObserve";
 import { useProtocolStatus } from "@/lib/protocol/useProtocolStatus";
-import { connectSettlement, sendSettlementTx, walletError } from "@/lib/protocol/wallet";
-import {
-  getServerWindow,
-  readWindow,
-  subscribeWindow,
-  writeWindow,
-} from "@/lib/windowStore";
 
 export function GateClient({
   initialTx,
@@ -38,20 +26,22 @@ export function GateClient({
   const router = useRouter();
   const [tx, setTx] = useState(initialTx ?? "");
   const [busy, setBusy] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ObserveResult | null>(null);
-  const live = useSyncExternalStore(subscribeWindow, readWindow, getServerWindow);
+  const [origin, setOrigin] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const started = useRef(0);
-  const deployed = protocolDeployed();
   const protocol = useProtocolStatus();
   const listed = protocol.markets.length > 0 ? protocol.markets : markets;
 
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
   const kind = classifyHash(tx);
-  const canVerify = kind === "tx" && !busy && !submitting;
+  const canVerify = kind === "tx" && !busy;
 
   async function onVerify() {
     if (!canVerify) return;
@@ -80,13 +70,6 @@ export function GateClient({
         return;
       }
       setResult(out);
-      if (out.decision === "PASS") {
-        writeWindow({
-          market: out.market,
-          tx: out.tx,
-          observedHuman: out.observedHuman ?? "—",
-        });
-      }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         setError("Verification unavailable. Fail closed.");
@@ -94,86 +77,6 @@ export function GateClient({
     } finally {
       window.clearInterval(tick);
       setBusy(false);
-    }
-  }
-
-  async function onSubmit() {
-    if (
-      !result?.submitReady ||
-      !PROTOCOL.gate ||
-      !result.merkleProof?.root ||
-      !result.continuityProof?.lowerEndpointDigest ||
-      !result.answer ||
-      result.advanced.verifySingle !== true
-    ) {
-      setError("Attestation is required before Creditcoin policy. Fail closed.");
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const { signer, address } = await connectSettlement();
-      const gate = new Contract(PROTOCOL.gate, gateAbi, signer);
-      const proof = {
-        chainKey: result.chainKey,
-        blockHeight: result.blockHeight,
-        encodedTransaction: result.txBytes.startsWith("0x")
-          ? result.txBytes
-          : `0x${result.txBytes}`,
-        merkleProof: {
-          root: result.merkleProof.root,
-          siblings: result.merkleProof.siblings,
-        },
-        continuityProof: {
-          lowerEndpointDigest: result.continuityProof.lowerEndpointDigest,
-          roots: result.continuityProof.roots,
-        },
-      };
-      const data = gate.interface.encodeFunctionData("submitSourceTransaction", [proof]);
-      const sent = await sendSettlementTx(signer, {
-        from: address,
-        to: PROTOCOL.gate,
-        data,
-      });
-      const receipt = await sent.wait();
-      const iface = new Interface(ENGINE_ABI);
-      let decision: "PASS" | "REJECT" = result.decision;
-      let reasons: PolicyReason[] = result.reasons;
-      for (const log of receipt?.logs ?? []) {
-        try {
-          const parsed = iface.parseLog({ topics: log.topics as string[], data: log.data });
-          if (parsed?.name === "DecisionEmitted") {
-            decision = Number(parsed.args.decision) === 1 ? "PASS" : "REJECT";
-            reasons = parsed.args.reasons as PolicyReason[];
-          }
-        } catch {
-          continue;
-        }
-      }
-      const pass = decision === "PASS";
-      const next: ObserveResult = {
-        ...result,
-        preview: false,
-        settlementTx: receipt?.hash ?? sent.hash,
-        decision,
-        reasons: pass ? ["PASS"] : reasons,
-        condition: pass ? "pass" : "fail",
-        conditionLabel: pass
-          ? "Market condition satisfied"
-          : reasons[0] ?? result.conditionLabel,
-      };
-      setResult(next);
-      if (pass) {
-        writeWindow({
-          market: next.market,
-          tx: next.tx,
-          observedHuman: next.observedHuman ?? "—",
-        });
-      }
-    } catch (err) {
-      setError(walletError(err));
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -185,7 +88,7 @@ export function GateClient({
             Verified Market Gate
           </h1>
           <p className="mt-3 text-[15px] text-mute">
-            Ethereum source · Attestcoin proof · Creditcoin policy
+            Ethereum source · Attestcoin proof. The product stops at attestation.
           </p>
 
           <form
@@ -195,7 +98,7 @@ export function GateClient({
               void onVerify();
             }}
           >
-            <HashField value={tx} onChange={setTx} disabled={busy || submitting} />
+            <HashField value={tx} onChange={setTx} disabled={busy} />
             <ul className="space-y-2 text-[12px] leading-5 text-mute">
               {protocol.loading && listed.length === 0 ? (
                 <li>Reading VinceRegistry…</li>
@@ -205,10 +108,6 @@ export function GateClient({
                   {market.display}
                   {market.ready ? `  ${market.floor}` : `  ${market.note ?? "not sourced"}`}
                   {market.liveRpcHuman ? `  RPC ${market.liveRpcHuman}` : ""}
-                  {"lastPrice" in market && market.lastPrice
-                    ? `  attested ${market.lastPrice}`
-                    : ""}
-                  {"windowLive" in market && market.windowLive ? "  PASS" : ""}
                 </li>
               ))}
               {!protocol.loading && listed.length === 0 ? (
@@ -250,50 +149,25 @@ export function GateClient({
           ) : null}
 
           {result && !busy ? (
-            <div className="space-y-10">
-              <Verdict result={result} />
-              <ProofPanel merkle={result.merkleProof} continuity={result.continuityProof} />
-              {result.decision === "PASS" && live ? (
-                <WindowClock live={live} />
-              ) : null}
-              {deployed ? (
-                <button
-                  type="button"
-                  onClick={() => void onSubmit()}
-                  disabled={submitting || !result.submitReady}
-                  className="inline-flex h-11 items-center rounded-[14px] border border-line bg-surface px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-accent disabled:text-mute"
-                >
-                  {submitting ? "Submitting on Creditcoin…" : "Submit on Creditcoin"}
-                </button>
-              ) : (
-                <p className="text-[13px] text-mute">
-                  Proofs are live. Creditcoin policy is not deployed on this build, so
-                  the window is preview-only.
-                </p>
-              )}
-              {result.decision === "PASS" ? (
-                <Link
-                  href="/desk"
-                  className="inline-flex h-11 items-center rounded-[14px] bg-accent px-5 text-[14px] font-medium text-on-accent transition-colors duration-200 hover:bg-accent-deep"
-                >
-                  Open the desk
-                </Link>
-              ) : (
-                <p className="text-[13px] text-mute">
-                  Desk stays locked until PASS.
-                </p>
-              )}
+            <div className="space-y-8">
+              <ReceiptCard result={result} shareOrigin={origin} />
+              <Link
+                href={receiptPath(result.tx, result.settlementTx)}
+                className="inline-flex h-11 items-center rounded-[14px] border border-line bg-surface px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-accent"
+              >
+                Open standalone receipt
+              </Link>
               <AdvancedPanel result={result} />
             </div>
           ) : null}
 
           {!busy && !error && !result ? (
             <div className="text-[15px] leading-7 text-mute">
-              <p className="text-ink">Result lands here.</p>
+              <p className="text-ink">The receipt lands here.</p>
               <p className="mt-4">
-                Paste a listed feed-update on the left. You will see two proofs
-                (Merkle inclusion and continuity) and two verdicts: whether the
-                print was proved, and whether that market’s rule passed.
+                After Attestcoin verifies the pasted tx you get a shareable
+                receipt. That is the end of the product. There is no settlement
+                step.
               </p>
             </div>
           ) : null}

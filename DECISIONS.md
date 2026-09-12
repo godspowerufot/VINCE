@@ -30,6 +30,10 @@ Status vocabulary:
 | [ADR-012](./docs/decisions/ADR-012-sepolia-policy-lab.md) | Sepolia policy lab; Attestcoin stays Creditcoin view | Superseded |
 | [ADR-013](./docs/decisions/ADR-013-gate-is-the-product.md) | Gate is the product; vault is lab-only; no JSON catalog | Accepted |
 | [ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md) | Live settlement is Creditcoin Testnet | Accepted |
+| [ADR-015](./docs/decisions/ADR-015-attestation-receipt.md) | After attestation, issue a shareable Receipt — not a trading license | Accepted |
+| [ADR-016](./docs/decisions/ADR-016-settlement-consumer.md) | Hackathon consumer is settlement against a proved print, not financing copy | Superseded |
+| [ADR-017](./docs/decisions/ADR-017-settle-on-verification.md) | Desk unlocks on Attestcoin verification; listed-market policy does not lock | Superseded |
+| [ADR-018](./docs/decisions/ADR-018-attest-only-product.md) | Product stops at attestation + receipt; settlement desk is out of the UI | Accepted |
 
 ## How to add a decision
 

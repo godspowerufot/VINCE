@@ -11,7 +11,7 @@ export function ProofPanel({
   merkle: MerkleProofView | null;
   continuity: ContinuityProofView | null;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   if (!merkle || !continuity) return null;
 
   return (

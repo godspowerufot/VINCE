@@ -6,16 +6,16 @@ VINCE is a protocol, not a dashboard. Prefer correctness, explicit assumptions, 
 
 ## Core law
 
-No financial action may depend solely on an off-chain price. **Attestation** is Attestcoin on Creditcoin: worker `verifySingle` (view) then `VinceVerifier.verifyAndEmit` at `0x0FD2` (CTC). **Hackathon policy + desk** settle on Creditcoin Testnet ([ADR-014](./docs/decisions/ADR-014-creditcoin-settlement.md)). Sepolia does not host `0x0FD2`. Do not invent it there.
+No financial action may depend solely on an off-chain price. **Attestation** is Attestcoin on Creditcoin: worker `verifySingle` (view) at `0x0FD2`. The **product UI stops at attestation + Receipt** ([ADR-018](./docs/decisions/ADR-018-attest-only-product.md)). Sepolia does not host `0x0FD2`. Do not invent it there.
 
 ## Capability rules
 
 1. Never invent protocol capabilities.
 2. Verify Attestcoin capabilities against the official SDK and protocol documentation before writing contracts, workers, or UI copy that claims a proof can be generated.
 3. Query `PrecompileChainInfoProvider.getSupportedChains()` before assuming a source chain is supported. Official environment docs currently list Ethereum Mainnet and Ethereum Sepolia, not Base.
-4. Never treat an attestation as equivalent to economic truth. Inclusion proof ≠ price truth ≠ policy pass.
+4. Never treat an attestation as equivalent to economic truth. Inclusion proof ≠ price truth. The UI does not settle ([ADR-018](./docs/decisions/ADR-018-attest-only-product.md)).
 5. Do not claim Base is an Attestcoin-supported source chain until Phase 2 confirms it on-chain. **MVP source is Ethereum.** Never label an Ethereum or Sepolia proof as TSLAc/Base.
-6. MVP price is a registered Chainlink feed-update (8 decimals) on an Attestcoin-supported chain. **Many markets**, not TSLA-only. Each listing has its own `minimumPrice`. User pastes the tx. Unlisted emitter → `REJECT_FEED`. Frozen or stale feeds fail closed.
+6. MVP observation is a Chainlink feed-update when present. User pastes the tx. Unlisted emitter is `REJECT_FEED` as a note, not a desk lock.
 
 ## Architecture rules
 

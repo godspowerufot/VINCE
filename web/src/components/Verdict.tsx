@@ -1,5 +1,7 @@
 import type { GateResult } from "@/lib/protocol/types";
 import { Mark } from "@/components/Mark";
+import { SETTLEMENT } from "@/lib/protocol/constants";
+import { shortenHash } from "@/lib/hash";
 
 export function Verdict({ result }: { result: GateResult }) {
   return (
@@ -43,6 +45,17 @@ export function Verdict({ result }: { result: GateResult }) {
 
       {result.footnote ? (
         <p className="max-w-xl text-[14px] leading-6 text-mute">{result.footnote}</p>
+      ) : null}
+
+      {result.settlementTx ? (
+        <a
+          href={`${SETTLEMENT.explorer}/tx/${result.settlementTx}`}
+          className="block text-[13px] text-accent hover:text-ink"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Creditcoin tx {shortenHash(result.settlementTx, 8)}
+        </a>
       ) : null}
     </div>
   );

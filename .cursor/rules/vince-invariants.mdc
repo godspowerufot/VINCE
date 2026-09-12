@@ -7,7 +7,7 @@ alwaysApply: true
 
 - Documentation-first until the user asks to leave Phase 0 or start Phase 2.
 - Never invent Attestcoin, Base, or Creditcoin capabilities. Check `docs/references/sources.md`.
-- Do not treat attestation as economic truth. Proof ≠ policy PASS.
+- Do not treat attestation as economic truth. Proof ≠ listed-market quality. The product UI stops at attestation + Receipt (ADR-018).
 - Separate observation, verification, normalization, policy, decision, execution.
 - Identify B20 tokens by address, not ticker.
 - Never bypass proof verification. Fail closed if proofs cannot be produced.
@@ -17,6 +17,6 @@ alwaysApply: true
 - Base as a source chain is **unconfirmed** and **not MVP**. MVP source is Ethereum (CC3 Testnet: Sepolia key 1, Ethereum Mainnet key 3).
 - Never label an Ethereum/Sepolia proof as TSLAc or Verified on Base.
 - User **pastes** the source tx. Protocol validates it. Worker must not swap in another hash.
-- MVP price is a registered Chainlink feed-update. **Many markets**, not TSLA-only. Each listing has its own threshold. Unlisted emitter → REJECT_FEED.
+- MVP observation is a Chainlink feed-update when one is present. Unlisted emitter is a note (`REJECT_FEED`), not a desk lock (ADR-017).
 - Vault: 30-minute PASS window, 50% LTV, mock vUSD.
 - Hackathon policy + desk settle on **Creditcoin Testnet** (ADR-014). `VinceVerifier` calls `0x0FD2` there. Sepolia lab (ADR-012) is superseded. Never claim Sepolia has `0x0FD2`.

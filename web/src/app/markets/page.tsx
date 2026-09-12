@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Contract } from "ethers";
 import { AppShell, Split } from "@/components/AppShell";
 import { REGISTRY_ABI } from "@/lib/protocol/abi";
+import { SETTLEMENT } from "@/lib/protocol/constants";
 import { PROTOCOL, protocolDeployed } from "@/lib/protocol/deployments";
 import { floorLabel } from "@/lib/protocol/markets";
 import { useProtocolStatus } from "@/lib/protocol/useProtocolStatus";
@@ -11,13 +12,19 @@ import type { ListedMarket } from "@/lib/protocol/types";
 import { connectSettlement, sendSettlementTx, walletError } from "@/lib/protocol/wallet";
 import { shortenHash } from "@/lib/hash";
 
+const OWNER = PROTOCOL.deployer;
+
 export default function MarketsPage() {
   const deployed = protocolDeployed();
   const status = useProtocolStatus();
   const [markets, setMarkets] = useState<ListedMarket[]>([]);
-  const [owner, setOwner] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(OWNER);
   const [me, setMe] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [listTx, setListTx] = useState<string | null>(null);
+  const [listPhase, setListPhase] = useState<
+    "idle" | "wallet" | "pending" | "confirmed" | "reverted"
+  >("idle");
   const [busy, setBusy] = useState(false);
   const [id, setId] = useState("");
   const [name, setName] = useState("");
@@ -61,7 +68,8 @@ export default function MarketsPage() {
   }
 
   useEffect(() => {
-    setMarkets(status.markets);
+    if (status.markets.length === 0) return;
+    setMarkets((prev) => (prev.length > status.markets.length ? prev : status.markets));
   }, [status.markets]);
 
   return (
@@ -74,9 +82,21 @@ export default function MarketsPage() {
             </h1>
             <p className="mt-3 text-[15px] leading-6 text-mute">
               Listed Ethereum feeds from VinceRegistry. Identity is the aggregator
-              address, never the ticker. RPC latest is live and unverified.
-              Attested is a proven feed-update.
+              address, never the ticker. Paste on the gate never lists a feed.
+              Only the registry owner can call listMarket.
             </p>
+            <dl className="mt-8 space-y-3 text-[13px] leading-5">
+              <div>
+                <dt className="text-mute">Registry owner</dt>
+                <dd className="mt-1 break-all text-ink">
+                  {owner ?? OWNER ?? "unknown"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-mute">Connected wallet</dt>
+                <dd className="mt-1 break-all text-ink">{me ?? "not connected"}</dd>
+              </div>
+            </dl>
             <div className="mt-8 flex flex-wrap gap-4">
               <button
                 type="button"
@@ -85,7 +105,11 @@ export default function MarketsPage() {
                   setBusy(true);
                   setMessage(null);
                   void loadOwner()
-                    .then(() => setMessage("Connected. Owner can list another feed."))
+                    .then(() =>
+                      setMessage(
+                        "Wallet connected. List market is owner-only.",
+                      ),
+                    )
                     .catch((err: unknown) =>
                       setMessage(err instanceof Error ? err.message : "Could not load registry."),
                     )
@@ -93,7 +117,7 @@ export default function MarketsPage() {
                 }}
                 className="inline-flex h-11 items-center rounded-[14px] border border-line bg-surface px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-accent disabled:text-mute"
               >
-                Connect to list a feed
+                Connect owner wallet
               </button>
             </div>
             <p className="mt-4 text-[13px] text-mute">
@@ -178,9 +202,19 @@ export default function MarketsPage() {
                   event.preventDefault();
                   setBusy(true);
                   setMessage(null);
+                  setListPhase("wallet");
                   void (async () => {
                     if (!PROTOCOL.registry) throw new Error("Registry is not deployed.");
+                    const feed = aggregator.trim();
+                    if (!/^0x[0-9a-fA-F]{40}$/.test(feed)) {
+                      throw new Error("Feed aggregator must be a 20-byte Ethereum address.");
+                    }
                     const { signer, address } = await connectSettlement();
+                    if (owner && address.toLowerCase() !== owner.toLowerCase()) {
+                      throw new Error(
+                        `This wallet is not the registry owner. Connect ${owner}.`,
+                      );
+                    }
                     const registry = new Contract(PROTOCOL.registry, REGISTRY_ABI, signer);
                     const dollars = Number(floor);
                     if (!Number.isFinite(dollars) || dollars <= 0) {
@@ -191,7 +225,7 @@ export default function MarketsPage() {
                       id.trim(),
                       3,
                       1,
-                      aggregator.trim(),
+                      feed,
                       minimumPrice,
                       3600,
                       name.trim(),
@@ -201,17 +235,35 @@ export default function MarketsPage() {
                       to: PROTOCOL.registry,
                       data,
                     });
-                    await sent.wait();
+                    setListTx(sent.hash);
+                    setListPhase("pending");
+                    setMessage("Submitted listMarket. Waiting for Creditcoin…");
+                    const receipt = await sent.wait();
+                    const hash = receipt?.hash ?? sent.hash;
+                    setListTx(hash);
+                    if (receipt && receipt.status === 0) {
+                      setListPhase("reverted");
+                      throw new Error(
+                        "Creditcoin included the tx, but listMarket reverted. The feed was not listed.",
+                      );
+                    }
+                    if (!receipt) {
+                      setMessage(
+                        "Submitted. Creditcoin receipt is not back yet — open the tx link.",
+                      );
+                      return;
+                    }
                     await loadOwner();
+                    setListPhase("confirmed");
                     setMessage(`Listed ${name.trim()}.`);
                     setId("");
                     setName("");
                     setAggregator("");
                     setFloor("");
                   })()
-                    .catch((err: unknown) =>
-                      setMessage(walletError(err)),
-                    )
+                    .catch((err: unknown) => {
+                      setMessage(walletError(err));
+                    })
                     .finally(() => setBusy(false));
                 }}
               >
@@ -236,19 +288,39 @@ export default function MarketsPage() {
                   disabled={busy}
                   className="inline-flex h-11 items-center rounded-[14px] bg-accent px-5 text-[14px] font-medium text-on-accent transition-colors duration-200 hover:bg-accent-deep disabled:bg-line disabled:text-mute"
                 >
-                  List market
+                  {listPhase === "wallet"
+                    ? "Confirm in wallet…"
+                    : listPhase === "pending"
+                      ? "Waiting for Creditcoin…"
+                      : "List market"}
                 </button>
               </form>
             ) : deployed ? (
               <p className="text-[13px] leading-6 text-mute">
-                Connect the registry owner to list another Ethereum feed. Do not
-                paste a ticker and hope.
+                {me
+                  ? "This wallet is not the registry owner. listMarket will revert."
+                  : "Connect the registry owner to list a sourced Ethereum feed. Do not paste a ticker."}
               </p>
             ) : (
               <p className="text-[13px] leading-6 text-mute">
                 Registry is not deployed on Creditcoin yet.
               </p>
             )}
+            {listTx ? (
+              <a
+                href={`${SETTLEMENT.explorer}/tx/${listTx}`}
+                className="block text-[13px] text-accent hover:text-ink"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {listPhase === "pending"
+                  ? "Submitted"
+                  : listPhase === "reverted"
+                    ? "Reverted"
+                    : "Listed"}{" "}
+                tx {shortenHash(listTx, 8)}
+              </a>
+            ) : null}
             {message ? <p className="text-[13px] text-mute">{message}</p> : null}
           </div>
         }

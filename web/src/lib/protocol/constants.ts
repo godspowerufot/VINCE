@@ -18,11 +18,25 @@ export const ETHEREUM = {
 
 export const CREDITCOIN = {
   chainId: 102031,
-  chainIdHex: "0x018eaf",
+  chainIdHex: "0x18e8f",
   name: "Creditcoin Testnet",
   rpc: "https://rpc.cc3-testnet.creditcoin.network",
+  wss: "wss://rpc.cc3-testnet.creditcoin.network",
   explorer: "https://creditcoin-testnet.blockscout.com",
   symbol: "CTC",
+} as const;
+
+/** EIP-3085 payload. Official testnet: EVM 102031 = 0x18e8f. 0x18eaf is 102063 — do not use. */
+export const CREDITCOIN_WALLET_CHAIN = {
+  chainId: "0x18e8f",
+  chainName: "Creditcoin Testnet",
+  nativeCurrency: {
+    name: "CTC",
+    symbol: "CTC",
+    decimals: 18,
+  },
+  rpcUrls: ["https://rpc.cc3-testnet.creditcoin.network"],
+  blockExplorerUrls: ["https://creditcoin-testnet.blockscout.com/"],
 } as const;
 
 export const SETTLEMENT = CREDITCOIN;
